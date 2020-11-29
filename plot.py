@@ -10,11 +10,14 @@ from mpl_toolkits.mplot3d import Axes3D
 # name of cif file in folder
 cif = 'MnO_R-3m'
 # get structure
+
+os.chdir('./_cif')
 mno = loadStructure(cif + '.cif').xyz.T
 x = mno[0]
 y = mno[1]
 z = mno[2]
 
+os.chdir('../temp')
 with open('points.npy', 'wb') as f:
     np.save(f, x)
     np.save(f, y)
@@ -23,11 +26,14 @@ with open('points.npy', 'wb') as f:
 with open('vector.npy', 'wb') as f:
     np.save(f, np.ones(3))
 
+os.chdir('../aux')
 #plot in other file
 os.system('python3 inter_plot.py')
 #gui in other file
 os.system('python3 window.py')
+os.system('cd ..')
 
+os.chdir('../temp')
 #load results from other executed code
 with open('cords.npy', 'rb') as f:
     cords = np.load(f)
@@ -38,6 +44,7 @@ with open('vector.npy', 'rb') as f:
 os.remove('vector.npy')
 os.remove('cords.npy')
 os.remove('points.npy')
+os.chdir('..')
 
 #format plot with arrows
 vector = vector / (3*la.norm(vector))

@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5 import QtWidgets
 import sys
 import numpy as np
+import os
 
 def popup():
     app = QApplication(sys.argv)
@@ -15,8 +16,10 @@ def popup():
         x = float(text[0])
         y = float(text[1])
         z = float(text[2])
+        os.chdir('../temp')
         with open('vector.npy', 'wb') as f:
             np.save(f, np.array([x,y,z]))
+        os.chdir('..')
         w.close()
 
     line_edit = QtWidgets.QLineEdit()

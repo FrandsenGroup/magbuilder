@@ -2,6 +2,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5 import QtWidgets
 import sys
+import os
 import numpy as np 
 from matplotlib import pyplot as plt 
 from mpl_toolkits.mplot3d import Axes3D
@@ -48,6 +49,7 @@ class ScatterClick:
             self.plot._edgecolor3d = self.fc
         self.fig.canvas.draw_idle()
 
+os.chdir('../temp')
 with open('points.npy', 'rb') as f:
     x = np.load(f)
     y = np.load(f)
