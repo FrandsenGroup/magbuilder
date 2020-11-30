@@ -1,65 +1,97 @@
-import sys
 import os
 import numpy.linalg as la
 import numpy as np 
-import time
 from matplotlib import pyplot as plt
 from diffpy.structure import loadStructure
 from mpl_toolkits.mplot3d import Axes3D
 
+cords_list = []
+vector_list = []
+
 # name of cif file in folder
 cif = 'MnO_R-3m'
-# get structure
-
+# get structure in _cif folder
 os.chdir('./_cif')
 mno = loadStructure(cif + '.cif').xyz.T
 x = mno[0]
 y = mno[1]
 z = mno[2]
 
+# move to temp and save structure and title
 os.chdir('../temp')
 with open('points.npy', 'wb') as f:
     np.save(f, x)
     np.save(f, y)
     np.save(f, z)
     np.save(f, cif)
-with open('vector.npy', 'wb') as f:
-    np.save(f, np.ones(3))
+# save data to show which cords have what vectors
+with open('arrows.npy', 'wb') as f:
+    np.save(f, cords_list, allow_pickle=True)
+    np.save(f, vector_list, allow_pickle=True)
+# delete file to end program
+if os.path.exists("done.npy"):
+    os.remove('done.npy')
 
-os.chdir('../aux')
-#plot in other file
-os.system('python3 inter_plot.py')
-#gui in other file
-os.system('python3 window.py')
-os.system('cd ..')
+while not os.path.exists("done.npy"):
+    # move to auxiliary .py files
+    os.chdir('../aux')
+    #plot in other file
+    os.system('python3 inter_plot.py')
+    #gui in other file
+    os.system('python3 window.py')
+    os.chdir('../temp')
 
-os.chdir('../temp')
-#load results from other executed code
-with open('cords.npy', 'rb') as f:
-    cords = np.load(f)
-with open('vector.npy', 'rb') as f:
-    vector = np.load(f)
+    #load results from other executed code to get vector and associated cords
+    with open('cords.npy', 'rb') as f:
+        cords = np.load(f)
+    with open('vector.npy', 'rb') as f:
+        vector = np.load(f)
 
-# delete files
-os.remove('vector.npy')
-os.remove('cords.npy')
+    # delete temp files
+    os.remove('vector.npy')
+    os.remove('cords.npy')
+
+    # save list of cords assigned a vector and respective vectors
+    cords_list += [cords]
+    vector_list += [vector / (3*la.norm(vector))]
+
+    with open('arrows.npy', 'wb') as f:
+        np.save(f, cords_list, allow_pickle=True)
+        np.save(f, vector_list, allow_pickle=True)
+
+    #check if we are done or if we need to click more points
+    if not os.path.exists("done.npy"):
+        continue
+
+    #format final plot with arrows
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_title(cif)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
+    ax.set_xlim3d((np.min(x) - (np.max(x)-np.min(x))/4, (np.max(x) + (np.max(x)-np.min(x))/4)))
+    ax.set_ylim3d((np.min(y) - (np.max(y)-np.min(y))/4, (np.max(y) + (np.max(y)-np.min(y))/4)))
+    ax.set_zlim3d((np.min(z) - (np.max(z)-np.min(z))/4, (np.max(z) + (np.max(z)-np.min(z))/4)))
+    ax.set_xlabel("X")
+    ax.set_ylabel("Y")
+    ax.set_zlabel("Z")
+
+    X = np.concatenate([x.reshape(len(x), 1),y.reshape(len(x), 1),z.reshape(len(x), 1)], 1)
+    cords = np.concatenate(cords_list)
+    magset = set(zip(cords[:,0], cords[:,1], cords[:,2]))
+    for i in X:
+        a,b,c = i
+        if (a,b,c) not in magset:
+            ax.scatter(a,b,c, color="blue", s=55)
+        else:
+            ax.scatter(a,b,c, color="red", s=55)
+    
+    for i in range(len(cords_list)):
+        plt.quiver(cords_list[i][:,0], cords_list[i][:,1], 
+                   cords_list[i][:,2], vector_list[i][0], 
+                   vector_list[i][1], vector_list[i][2], 
+                   length=(np.max(x) - np.min(x))/1.5, color="black")
+    plt.show()
+
 os.remove('points.npy')
-os.chdir('..')
-
-#format plot with arrows
-vector = vector / (3*la.norm(vector))
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-ax.set_title(cif)
-ax.set_xticks([])
-ax.set_yticks([])
-ax.set_zticks([])
-ax.set_xlim3d((np.min(x) - (np.max(x)-np.min(x))/4, (np.max(x) + (np.max(x)-np.min(x))/4)))
-ax.set_ylim3d((np.min(y) - (np.max(y)-np.min(y))/4, (np.max(y) + (np.max(y)-np.min(y))/4)))
-ax.set_zlim3d((np.min(z) - (np.max(z)-np.min(z))/4, (np.max(z) + (np.max(z)-np.min(z))/4)))
-ax.set_xlabel("X")
-ax.set_ylabel("Y")
-ax.set_zlabel("Z")
-ax.scatter(x,y,z, color="blue", s=55)
-plt.quiver(cords[:,0], cords[:,1], cords[:,2], vector[0], vector[1], vector[2], length=(np.max(x) - np.min(x))/1.5, color="black")
-plt.show()
