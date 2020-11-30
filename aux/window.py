@@ -10,13 +10,17 @@ def popup():
     w = QtWidgets.QWidget()
     w.setGeometry(50,50,200,200)
 
+    def clicked2():
+        with open('done.npy', 'wb') as f:
+            np.save(f, True)
+        clicked1()
+
     def clicked1():
         text = line_edit.text().replace(" ", "").replace("[", "").replace("]", "").replace("(", "").replace(")", "")
         text = text.split(",")
         x = float(text[0])
         y = float(text[1])
         z = float(text[2])
-        os.chdir('../temp')
         with open('vector.npy', 'wb') as f:
             np.save(f, np.array([x,y,z]))
         os.chdir('..')
@@ -35,14 +39,21 @@ def popup():
     b1.move(50,125)
     b1.setAutoDefault(True)
     b1.clicked.connect(clicked1)
+
+    b2 = QtWidgets.QPushButton()
+    b2.setText("Final Spins")
+    b2.move(50,150)
+    b2.setAutoDefault(True)
+    b2.clicked.connect(clicked2)
     
     layout = QtWidgets.QVBoxLayout()
     layout.addWidget(line_edit)
     layout.addWidget(label)
     layout.addWidget(b1)
+    layout.addWidget(b2)
     
     w.setLayout(layout)
     w.show()
     sys.exit(app.exec_())
-
+os.chdir('../temp')
 popup()
