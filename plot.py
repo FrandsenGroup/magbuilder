@@ -4,12 +4,16 @@ import numpy as np
 from matplotlib import pyplot as plt
 from diffpy.structure import loadStructure
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib as mpl
+mpl.rcParams['toolbar'] = 'None'
 
 cords_list = []
 vector_list = []
 
 # name of cif file in folder
-cif = 'MnO_R-3m'
+#cif = input("Enter Name of .cif file:\n")
+cif =  'MnO_R-3m'
+
 # get structure in _cif folder
 os.chdir('./_cif')
 mno = loadStructure(cif + '.cif').xyz.T
@@ -24,10 +28,12 @@ with open('points.npy', 'wb') as f:
     np.save(f, y)
     np.save(f, z)
     np.save(f, cif)
+quiver = np.zeros((len(x), 3))
 # save data to show which cords have what vectors
 with open('arrows.npy', 'wb') as f:
-    np.save(f, cords_list, allow_pickle=True)
-    np.save(f, vector_list, allow_pickle=True)
+    np.save(f, [], allow_pickle=True)
+    np.save(f, quiver, allow_pickle=True)
+    np.save(f, 4, allow_pickle=True)
 # delete file to end program
 if os.path.exists("done.npy"):
     os.remove('done.npy')
@@ -40,24 +46,30 @@ while not os.path.exists("done.npy"):
     #gui in other file
     os.system('python3 window.py')
     os.chdir('../temp')
+    
+    last_cords = []
 
     #load results from other executed code to get vector and associated cords
     with open('cords.npy', 'rb') as f:
         cords = np.load(f)
+        k = np.load(f)
     with open('vector.npy', 'rb') as f:
         vector = np.load(f)
 
     # delete temp files
     os.remove('vector.npy')
     os.remove('cords.npy')
-
-    # save list of cords assigned a vector and respective vectors
-    cords_list += [cords]
-    vector_list += [vector / (3*la.norm(vector))]
-
+    if len(vector) != 1:
+        vector = vector / la.norm(vector)
+        # save list of cords assigned a vector and respective vectors
+        quiver[np.array(cords), :] = vector.ravel()
+        last_cords = cords
+    else:
+        cords = last_cords
     with open('arrows.npy', 'wb') as f:
-        np.save(f, cords_list, allow_pickle=True)
-        np.save(f, vector_list, allow_pickle=True)
+        np.save(f, cords, allow_pickle=True)
+        np.save(f, quiver, allow_pickle=True)
+        np.save(f, k, allow_pickle=True)
 
     #check if we are done or if we need to click more points
     if not os.path.exists("done.npy"):
@@ -91,7 +103,7 @@ while not os.path.exists("done.npy"):
         plt.quiver(cords_list[i][:,0], cords_list[i][:,1], 
                    cords_list[i][:,2], vector_list[i][0], 
                    vector_list[i][1], vector_list[i][2], 
-                   length=(np.max(x) - np.min(x))/1.5, color="black")
+                   length=(np.max(x) - np.min(x))/4, color="black")
     plt.show()
 
 os.remove('points.npy')

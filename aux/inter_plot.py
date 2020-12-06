@@ -6,114 +6,147 @@ import os
 import numpy as np 
 from matplotlib import pyplot as plt 
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib as mpl
 
 class ScatterClick:
-    def __init__(self, pts, cif, cords_list, vector_list):
+    def __init__(self, pts, cif, plotted, vectors, k):
         self.pts = pts
-        self.get_usable_pts(cords_list)
-
+        
+        X = np.zeros((len(pts), 7))
+        X[:,:3] = pts
+        if len(plotted) > 0:
+            X[np.array(plotted).ravel(),3] = 1
+            X[:,4:] = vectors
+        self.k = k
+        self.X = X
+        mpl.rcParams['toolbar'] = 'None'
         # initialize 3d plot and save attributes    
         self.clicked = []
         self.fig = plt.figure()
-        ax = self.fig.add_subplot(111, projection='3d')
+        self.ax = self.fig.add_subplot(111, projection='3d')
         # changeable plot
-        self.plot = ax.scatter(self.usable[:,0],self.usable[:,1],self.usable[:,2],
-                               picker=True, s=55, facecolors=["C0"]*len(self.usable[:,0]),
-                               edgecolors=["C0"]*len(self.usable[:,0]))
-        # scatterplot that wont interact or change color
-        if len(self.fixed) != 0:
-            ax.scatter(self.fixed[:,0],self.fixed[:,1],self.fixed[:,2], s=55, 
-                       facecolors='red', edgecolors='red', label="Magnetic")
-        # graph settings
+        
+        self.plot = self.ax.scatter(self.X[:,0],self.X[:,1],self.X[:,2],
+                               picker=True, s=55, facecolors=["C0"]*len(self.X[:,0]),
+                               edgecolors=["C0"]*len(self.X[:,0]))
+        
         self.fc = self.plot.get_facecolors()
         self.ogcolor = self.fc[0,:].copy()
-        ax.set_title(cif)
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_zticks([])
-        ax.set_xlabel("X")
-        ax.set_ylabel("Y")
-        ax.set_zlabel("Z")
+        if len(plotted) != 0:
+            self.fc[np.array(plotted),:] = np.array([1, 0, 0, 1])
+            self.plot._facecolor3d = self.fc
+            self.plot._edgecolor3d = self.fc
+        # graph settings
+        self.plotted = plotted
+        self.ax.set_title(cif)
+        self.ax.set_xticks([])
+        self.ax.set_yticks([])
+        self.ax.set_zticks([])
+        self.ax.set_xlabel("X")
+        self.ax.set_ylabel("Y")
+        self.ax.set_zlabel("Z")
 
-        self.numpts = 0
-        x, y, z = pts[:,0], pts[:,1], pts[:,2]
-        ax.set_xlim3d((np.min(x) - (np.max(x)-np.min(x))/4, (np.max(x) + (np.max(x)-np.min(x))/4)))
-        ax.set_ylim3d((np.min(y) - (np.max(y)-np.min(y))/4, (np.max(y) + (np.max(y)-np.min(y))/4)))
-        ax.set_zlim3d((np.min(z) - (np.max(z)-np.min(z))/4, (np.max(z) + (np.max(z)-np.min(z))/4)))
-        self.x, self.y, self.z = self.usable[:,0], self.usable[:,1], self.usable[:,2]
-
+        self.ax.set_xlim3d((np.min(self.X[:,0]) - (np.max(self.X[:,0])-np.min(self.X[:,0]))/4, (np.max(self.X[:,0]) + (np.max(self.X[:,0])-np.min(self.X[:,0]))/4)))
+        self.ax.set_ylim3d((np.min(self.X[:,1]) - (np.max(self.X[:,1])-np.min(self.X[:,1]))/4, (np.max(self.X[:,1]) + (np.max(self.X[:,1])-np.min(self.X[:,1]))/4)))
+        self.ax.set_zlim3d((np.min(self.X[:,2]) - (np.max(self.X[:,2])-np.min(self.X[:,2]))/4, (np.max(self.X[:,2]) + (np.max(self.X[:,2])-np.min(self.X[:,2]))/4)))
+        
         # plot arrows if called for
-        for i in range(len(vector_list)):
-            plt.quiver(cords_list[i][:,0], cords_list[i][:,1], 
-                        cords_list[i][:,2], vector_list[i][0], 
-                        vector_list[i][1], vector_list[i][2], 
-                        length=(np.max(x) - np.min(x))/1.5, color="black")
+
+        self.quiver = self.ax.quiver(self.X[:,0], self.X[:,1], self.X[:,2],
+                                self.X[:,4], self.X[:,5], self.X[:,6], 
+                                length=(np.max(self.X[:,0]) - np.min(self.X[:,0]))/self.k,
+                                color="black", 
+                                pivot="middle")
+
         # initialize functions called upon events
         self.fig.canvas.mpl_connect('close_event',self.on_close)
         self.fig.canvas.mpl_connect('pick_event',self.on_press)
-        self.fig.canvas.mpl_connect('key_release_event',self.on_close)
+        self.fig.canvas.mpl_connect('key_press_event',self.on_enter)
         plt.show()
-
-    def get_usable_pts(self, cords_list):
-        if len(cords_list) > 0:
-            used_cords = np.concatenate(cords_list, axis=0) 
-            assigned = list(zip(used_cords[:,0],used_cords[:,1],used_cords[:,2]))
-            usable = []
-            fixed = []
-            for i in self.pts:
-                if (i[0], i[1], i[2]) not in assigned:
-                    usable += [i]
-                else:
-                    fixed += [i]
-            self.usable = np.array(usable)
-            self.fixed = np.array(fixed)
-        else:
-            self.usable = self.pts.copy()
-            self.fixed = np.array([])
 
     def on_close(self, event):
         # closing the program saves clicked positions to external file
-        with open('cords.npy', 'wb') as f:
-            np.save(f, self.clicked)
+        if len(self.clicked) > 0:
+            with open('cords.npy', 'wb') as f:
+                np.save(f, self.clicked)
+                np.save(f, self.k)
+            plt.close()
+        else:
+            self.kill()
+    
+    def on_enter(self, event):
+        if event.key == "enter":
+            self.on_close("enter")
+        elif (event.key == "d" or event.key == "escape"):
+            self.kill()
+        elif event.key == "l":
+            self.k *= 0.9
+            self.redraw_arrows()
+        elif event.key == "s":
+            self.k *= 10/9
+            self.redraw_arrows()
+        
+        self.fig.canvas.draw_idle()
+
+    def redraw_arrows(self):
+        self.quiver.remove()
+        self.quiver = self.ax.quiver(self.X[:,0], self.X[:,1], self.X[:,2], self.X[:,4], 
+                                     self.X[:,5], self.X[:,6], 
+                                     length=(np.max(x) - np.min(x))/self.k, color="black",
+                                     pivot="middle")
+        for line in self.ax.xaxis.get_ticklines():
+            line.set_visible(False)
+        for line in self.ax.yaxis.get_ticklines():
+            line.set_visible(False)
+        for line in self.ax.zaxis.get_ticklines():
+            line.set_visible(False)
+               
+    def kill(self):
+        with open('done.npy', 'wb') as f:
+            np.save(f, True) 
         plt.close()
+               
 
     def on_press(self, event):
         # clicking the artist changes the color and saves the coords in self.clicked
         #
+
         ind = event.ind
-        self.numpts += 1
-        # build array of points clicked
-        if len(self.clicked) == 0:
-            self.clicked = np.array([self.x[ind], self.y[ind], self.z[ind]]).reshape(1,3)
-        else:
-            self.clicked = np.concatenate([self.clicked.reshape(self.numpts-1, 3),
-                           np.array([self.x[ind], self.y[ind], self.z[ind]]).reshape(1,3)],
-                           axis=0)
-        for i in list(ind): # might be more than one point if ambiguous click
-            # find if the clicked point is already in the clicked attribute
-            if not np.allclose(self.fc[i,:], np.array([1, 0, 0, 1])):
-                self.fc[i,:] = (1, 0, 0, 1)
-                self.plot._facecolor3d = self.fc
-                self.plot._edgecolor3d = self.fc
-            else:
-                # if this is the case, remove both clicks from the matrix 
-                # and reset the color / numpts
-                dup = self.clicked[-1,:].ravel()
-                self.clicked = self.clicked[:-1, :].copy()
-                m , n = self.clicked.shape
-                if m == 1:
-                    self.clicked = []
+        point = np.array([self.X[ind,0], self.X[ind,1], self.X[ind,2]])
+        fixed = False
+
+        for i in ind:
+            if self.X[i,3] == 1:
+                fixed = True
+                break
+
+        if str(event.mouseevent.button) == "MouseButton.LEFT" and not fixed:
+            for i in ind:
+                if i not in self.clicked:
+                    self.clicked += [i]
+                    self.fc[i,:] = (1, 0, 0, 1)
+                    
                 else:
-                    new = []
-                    for j in range(m):
-                        if not np.allclose(dup, self.clicked[j]):
-                            new += [self.clicked[j]]
-                    self.clicked = np.array(new)
-                self.fc[i,:] = self.ogcolor
+                    self.clicked.remove(i)
+                    self.fc[i,:] = self.ogcolor
+                    
                 self.plot._facecolor3d = self.fc
                 self.plot._edgecolor3d = self.fc
-                self.numpts = self.numpts - 2 
+            
+        elif str(event.mouseevent.button) == "MouseButton.RIGHT" and fixed:
+            for i in ind:
+                self.X[i,3:] = np.zeros(4)
+            self.quiver.remove()
+            self.quiver = self.ax.quiver(self.X[:,0], self.X[:,1], self.X[:,2], self.X[:,4], 
+                                         self.X[:,5], self.X[:,6], 
+                                         length=(np.max(x) - np.min(x))/self.k, color="black",
+                                         pivot="middle")    
+            self.fc[i,:] = self.ogcolor
+            self.plot._facecolor3d = self.fc
+            self.plot._edgecolor3d = self.fc
         self.fig.canvas.draw_idle()
+        
+            
 
 # navigate to and open structure data
 os.chdir('../temp')
@@ -124,9 +157,10 @@ with open('points.npy', 'rb') as f:
     cif = np.load(f)
 # check for previous iteration vectors to plot
 with open('arrows.npy', 'rb') as f:
-    cords_list = np.load(f, allow_pickle=True)
-    vector_list = np.load(f, allow_pickle=True)
+    cords = np.load(f, allow_pickle=True)
+    arrows = np.load(f, allow_pickle=True)
+    k = np.load(f, allow_pickle=True)
 pts = np.array([x,y,z]).T
 #plot and interact via ScatterClick class
-ScatterClick(pts, cif, cords_list, vector_list)
+ScatterClick(pts, cif, cords, arrows, k)
 

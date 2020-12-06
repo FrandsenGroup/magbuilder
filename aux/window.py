@@ -11,9 +11,10 @@ def popup():
     w.setGeometry(50,50,200,200)
 
     def clicked2():
-        with open('done.npy', 'wb') as f:
-            np.save(f, True)
-        clicked1()
+        with open('vector.npy', 'wb') as f:
+            np.save(f, np.array([0]))
+        os.chdir('..')
+        w.close()
 
     def clicked1():
         text = line_edit.text().replace(" ", "").replace("[", "").replace("]", "").replace("(", "").replace(")", "")
@@ -41,7 +42,7 @@ def popup():
     b1.clicked.connect(clicked1)
 
     b2 = QtWidgets.QPushButton()
-    b2.setText("Final Spins")
+    b2.setText("Cancel")
     b2.move(50,150)
     b2.setAutoDefault(True)
     b2.clicked.connect(clicked2)
@@ -56,4 +57,5 @@ def popup():
     w.show()
     sys.exit(app.exec_())
 os.chdir('../temp')
-popup()
+if not os.path.exists("done.npy"):
+    popup()
