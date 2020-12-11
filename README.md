@@ -16,3 +16,4 @@ Visualization Controls:
 - Once all atoms to have spins added are selected, close the window or press enter
 - The popup will prompt user for dx,dy,dz vector coordinates for the selected atoms.  Press Enter or Set Spins to set.  Cancel to not set spins.
 - To undo a made spin, righ click on the red vectorized atom
+- To exit once done, press the escape or "d" keys to end program
