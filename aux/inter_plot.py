@@ -10,6 +10,13 @@ import matplotlib as mpl
 
 class ScatterClick:
     def __init__(self, pts, cif, plotted, vectors, k):
+        """
+        pts : n x 3 ndarray with coordinate points
+        cif : filename
+        plotted : indices for the plotted coordinats with an arrow
+        vectors : vectors for plotted arrows ([0,0,0] for no arrow
+        k = size for arrows
+        """
         self.pts = pts
         
         X = np.zeros((len(pts), 7))
@@ -20,9 +27,8 @@ class ScatterClick:
         self.k = k
         self.X = X
         mpl.rcParams['toolbar'] = 'None'
-        # initialize 3d plot and save attributes    
-        self.clicked = []
-        self.fig = plt.figure()
+        # initialize 3d plot and save attributes 
+        self.fig = plt.figure(figsize=(8.,6.))
         self.ax = self.fig.add_subplot(111, projection='3d')
         # changeable plot
         
