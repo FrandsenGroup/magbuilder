@@ -11,8 +11,27 @@ import numpy as np
 from matplotlib import pyplot as plt
 from diffpy.structure import loadStructure
 from mpl_toolkits.mplot3d import Axes3D
-import matplotlib as mpl
 
+def update(X, vector, cords, undone):
+    #erase undone vectors
+    if len(undone) != 0:
+            X[undone, 3:] = 0
+    # add new vector
+    if len(vector) != 1 and len(cords):
+        vector = vector / la.norm(vector)
+        X[cords, 4:] = vector
+        X[cords, 3] = 1
+        cords = []
+        # ones column update
+        for i in range(len(X)):
+            if not np.allclose(X[i, 4:], np.zeros(3)):
+                X[i,3] = 1
+            else:
+                X[i,3] = 0
+    return X
+
+
+####################--- Open File Dialog ---##########################
 os.chdir('./_cif')
 
 root = tk.Tk()
@@ -27,68 +46,63 @@ except:
 if cif[-4:] != ".cif":
     raise ValueError("File selected of wrong type")
 
-
+#####################--- Load Structure and build X matrix ---########################
 mno = loadStructure(cif).xyz.T
-x = mno[0]
-y = mno[1]
-z = mno[2]
+X = np.zeros((len(mno[0]), 7))
+X[:,0], X[:,1], X[:,2] = mno[0], mno[1], mno[2]
 
-cords_list = []
-vector_list = []
-
-# move to temp and save structure and title
+#####################--- Save Matrix and params/title & default vector ---#############
 os.chdir('../temp')
 with open('points.npy', 'wb') as f:
-    np.save(f, x)
-    np.save(f, y)
-    np.save(f, z)
+    np.save(f, X)
+    np.save(f, 4)
+    np.save(f, 50)
     np.save(f, cif)
-quiver = np.zeros((len(x), 3))
-# save data to show which cords have what vectors
-with open('arrows.npy', 'wb') as f:
-    np.save(f, [], allow_pickle=True)
-    np.save(f, quiver, allow_pickle=True)
-    np.save(f, 4, allow_pickle=True)
-# delete file to end program
+with open('vector.npy', 'wb') as f:
+    np.save(f, np.array([0,0,0]))
+
+########################--- Delete End Trigger before iterating ---#################
 if os.path.exists("done.npy"):
     os.remove('done.npy')
 
+# iterate
 while not os.path.exists("done.npy"):
     # move to auxiliary .py files
     os.chdir('../aux')
     #plot in other file
     os.system('python3 inter_plot.py')
-    #gui in other file
-    os.system('python3 window.py')
+    # check if we assign vectors / end the program
     os.chdir('../temp')
-
     if os.path.exists("done.npy"):
         break
-    
-    last_cords = []
-
-    #load results from other executed code to get vector and associated cords
-    with open('cords.npy', 'rb') as f:
-        cords = np.load(f)
-        k = np.load(f)
-
     with open('vector.npy', 'rb') as f:
         vector = np.load(f)
+    if len(vector) != 1:
+        #if we need other vectors, then run GUI
+        os.chdir('../aux')
+        os.system('python3 window.py')
+        os.chdir('../temp')
+        with open('vector.npy', 'rb') as f:
+             vector = np.load(f)
+    
+    #load results from other executed code to get associated cords
+    with open('cords.npy', 'rb') as f:
+        cords = np.load(f)
+        undone = list(set(np.load(f)))
+        k = np.load(f)
+        s = np.load(f)
 
     # delete temp files
-    os.remove('vector.npy')
     os.remove('cords.npy')
-    if len(vector) != 1:
-        vector = vector / la.norm(vector)
-        # save list of cords assigned a vector and respective vectors
-        quiver[np.array(cords), :] = vector.ravel()
-        last_cords = cords
-    else:
-        cords = last_cords
-    with open('arrows.npy', 'wb') as f:
-        np.save(f, cords, allow_pickle=True)
-        np.save(f, quiver, allow_pickle=True)
-        np.save(f, k, allow_pickle=True)
 
-os.remove('arrows.npy')
-os.remove('points.npy')
+    # Update X Matrix to erase undone vectors and update new vectors    
+    X = update(X, vector, np.array(cords), np.array(undone))
+
+    # save X matrix to go back into plot
+    with open('points.npy', 'wb') as f:
+        np.save(f, X)
+        np.save(f, k)
+        np.save(f, s)
+        np.save(f, cif)
+
+

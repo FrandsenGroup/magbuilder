@@ -1,116 +1,148 @@
-from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow
-from PyQt5 import QtWidgets
-import sys
 import os
 import numpy as np 
+import matplotlib as mpl
 from matplotlib import pyplot as plt 
 from mpl_toolkits.mplot3d import Axes3D
-import matplotlib as mpl
+
 
 class ScatterClick:
-    def __init__(self, pts, cif, plotted, vectors, k):
+    def __init__(self, X, cif, l, s):
         """
-        pts : n x 3 ndarray with coordinate points
+        X : n x 7 ndarray with coordinate points in first 3 cols, 
+                      1 for if theres a vector in col 4 and  has
+                      the associated vectors in 5,6,7
         cif : filename
-        plotted : indices for the plotted coordinats with an arrow
-        vectors : vectors for plotted arrows ([0,0,0] for no arrow
-        k = size for arrows
+        l = size for arrows
+        s = dot size
         """
-        self.pts = pts
-        
-        X = np.zeros((len(pts), 7))
-        X[:,:3] = pts
-        if len(plotted) > 0:
-            X[np.array(plotted).ravel(),3] = 1
-            X[:,4:] = vectors
-        self.k = k
-        self.X = X
-        mpl.rcParams['toolbar'] = 'None'
-        # initialize 3d plot and save attributes 
-        self.fig = plt.figure(figsize=(8.,6.))
-        self.ax = self.fig.add_subplot(111, projection='3d')
-        # changeable plot
-        
+        self.undone = []                       # to contain removed vectors if any
+        self.clicked = []                      # to contain points receiving a vector
+        self.l = l                             # default length of arrows
+        self.s = s                             # default size of point
+        self.X = X                             # X matrix containing coordinates and vectors
+        self.fig = plt.figure(figsize=(8.,6.)) # set and save figure object
+        mpl.rcParams['toolbar'] = 'None'       # remove matplotlib toolbar
+        self.ax = self.fig.add_subplot(111, projection='3d') # make 3d
+        plotted, _ = (X == 1).nonzero()        
+        self.plotted = list(set(plotted))      # indexes with associated vectors
+
+        #scatter the structure data
         self.plot = self.ax.scatter(self.X[:,0],self.X[:,1],self.X[:,2],
-                               picker=True, s=55, facecolors=["C0"]*len(self.X[:,0]),
+                               picker=True, s=self.s, facecolors=["C0"]*len(self.X[:,0]),
                                edgecolors=["C0"]*len(self.X[:,0]))
         
-        self.fc = self.plot.get_facecolors()
-        self.ogcolor = self.fc[0,:].copy()
-        if len(plotted) != 0:
-            self.fc[np.array(plotted),:] = np.array([1, 0, 0, 1])
-            self.plot._facecolor3d = self.fc
-            self.plot._edgecolor3d = self.fc
-        # graph settings
-        self.plotted = plotted
-        self.ax.set_title(cif)
-        self.ax.set_xticks([])
-        self.ax.set_yticks([])
-        self.ax.set_zticks([])
-        self.ax.set_xlabel("X")
-        self.ax.set_ylabel("Y")
-        self.ax.set_zlabel("Z")
+        self.set_plot_params(cif) # set color, axes, labels, title
 
-        self.ax.set_xlim3d((np.min(self.X[:,0]) - (np.max(self.X[:,0])-np.min(self.X[:,0]))/4, (np.max(self.X[:,0]) + (np.max(self.X[:,0])-np.min(self.X[:,0]))/4)))
-        self.ax.set_ylim3d((np.min(self.X[:,1]) - (np.max(self.X[:,1])-np.min(self.X[:,1]))/4, (np.max(self.X[:,1]) + (np.max(self.X[:,1])-np.min(self.X[:,1]))/4)))
-        self.ax.set_zlim3d((np.min(self.X[:,2]) - (np.max(self.X[:,2])-np.min(self.X[:,2]))/4, (np.max(self.X[:,2]) + (np.max(self.X[:,2])-np.min(self.X[:,2]))/4)))
-        
-        # plot arrows if called for
-
+        # plot quiver of arrows
         self.quiver = self.ax.quiver(self.X[:,0], self.X[:,1], self.X[:,2],
-                                self.X[:,4], self.X[:,5], self.X[:,6], 
-                                length=(np.max(self.X[:,0]) - np.min(self.X[:,0]))/self.k,
-                                color="black", 
-                                pivot="middle")
+                        self.X[:,4], self.X[:,5], self.X[:,6], 
+                        length=2*self.scaling_magnitude/self.l,
+                        color="black", pivot="middle", arrow_length_ratio=0.3)
 
         # initialize functions called upon events
-        self.fig.canvas.mpl_connect('close_event',self.on_close)
-        self.fig.canvas.mpl_connect('pick_event',self.on_press)
-        self.fig.canvas.mpl_connect('key_press_event',self.on_enter)
+        self.fig.canvas.mpl_connect('close_event',self.on_close) # D, escape, enter
+        self.fig.canvas.mpl_connect('pick_event',self.on_press) # click on plotted point
+        self.fig.canvas.mpl_connect('key_release_event',self.on_enter) # zoom / scale 
         plt.show()
+        
+    def set_plot_params(self, cif):
+            # set colors
+            self.blue = np.array([0.12156863, 0.4666667, 0.70588235, 1.])
+            self.red = np.array([1,0,0,1])
+            self.fc = self.plot.get_facecolors()
+            # set plotted colors to red
+            if len(self.plotted) != 0:
+                self.fc[np.array(self.plotted),:] = self.red
+                self.plot._facecolor3d = self.fc
+                self.plot._edgecolor3d = self.fc
 
+            # graph cosmetics
+            self.ax.set_title(cif)
+            self.ax.set_xticks([])
+            self.ax.set_yticks([])
+            self.ax.set_zticks([])
+            self.ax.set_xlabel("X")
+            self.ax.set_ylabel("Y")
+            self.ax.set_zlabel("Z")
+            
+            # center and scale all axes equally
+            self.centroid = np.sum(self.X[:,:3], axis=0) / len(self.X)
+            self.scaling_magnitude = np.max(np.abs(self.X[:,:3] - self.centroid))
+            self.zoom = 1.2
+            self.axes_lim()
+            
+    def axes_lim(self):
+            #scale and center plot
+            self.ax.set_xlim3d(self.centroid[0] - self.zoom*self.scaling_magnitude, self.centroid[0] + self.zoom*self.scaling_magnitude)
+            self.ax.set_ylim3d(self.centroid[1] - self.zoom*self.scaling_magnitude, self.centroid[1] + self.zoom*self.scaling_magnitude)
+            self.ax.set_zlim3d(self.centroid[2] - self.zoom*self.scaling_magnitude, self.centroid[2] + self.zoom*self.scaling_magnitude)
+    
     def on_close(self, event):
         # closing the program saves clicked positions to external file
-        if len(self.clicked) > 0:
-            with open('cords.npy', 'wb') as f:
+        # when there was something done
+
+        if (len(self.clicked) > 0) or (len(self.undone) > 0):
+            with open('cords.npy', 'wb') as f: # save data and assign vector
                 np.save(f, self.clicked)
-                np.save(f, self.k)
-            plt.close()
-        else:
+                np.save(f, self.undone)
+                np.save(f, self.l)
+                np.save(f, self.s)
+            if (len(self.clicked) == 0): # pass to skip vector assignment
+                with open('vector.npy', 'wb') as f:
+                    np.save(f, [0])
+
+        # if nothing was done
+        elif (len(self.clicked) == 0) and (len(self.undone) == 0):
             self.kill()
     
     def on_enter(self, event):
-        if event.key == "enter":
-            self.on_close("enter")
-        elif (event.key == "d" or event.key == "escape"):
+
+        if event.key == "enter": # proceed to save and continue to vector assignemnt
+            plt.close()
+        elif (event.key == "d" or event.key == "escape"): # end program
             self.kill()
-        elif event.key == "l":
-            self.k *= 0.9
-            self.redraw_arrows()
-        elif event.key == "s":
-            self.k *= 10/9
-            self.redraw_arrows()
-        
-        self.fig.canvas.draw_idle()
+            plt.close()
+        else:
+            if (event.key == "right") and (len(self.plotted) != 0): # grow arrow
+                self.l = 0.9*self.l
+                self.redraw_arrows()
+            elif (event.key == "left") and (len(self.plotted) != 0): # shrink arrow
+                self.l = 10*self.l/9
+                self.redraw_arrows()
+            elif event.key == "down": # shrink size of point
+                self.s = 0.9*self.s
+                self.redraw_scatter()
+            elif event.key == "up": # grow size of point
+                self.s = 10*self.s/9
+                self.redraw_scatter()
+            elif event.key == "ctrl+-": # zoom into structure
+                self.zoom = 10*self.zoom/9
+                self.axes_lim()
+            elif event.key == "ctrl+=": # zoom out of structure
+                self.zoom = 9*self.zoom/10 
+                self.axes_lim()
+            # update canvas
+            self.fig.canvas.draw_idle()
 
     def redraw_arrows(self):
+        #remove and replot arrows
         self.quiver.remove()
         self.quiver = self.ax.quiver(self.X[:,0], self.X[:,1], self.X[:,2], self.X[:,4], 
                                      self.X[:,5], self.X[:,6], 
-                                     length=(np.max(x) - np.min(x))/self.k, color="black",
-                                     pivot="middle")
-        for line in self.ax.xaxis.get_ticklines():
-            line.set_visible(False)
-        for line in self.ax.yaxis.get_ticklines():
-            line.set_visible(False)
-        for line in self.ax.zaxis.get_ticklines():
-            line.set_visible(False)
+                                     length=2*self.scaling_magnitude/self.l, 
+                                     color="black", pivot="middle", arrow_length_ratio=0.3)
+    def redraw_scatter(self):
+        # remove and replot scattered points
+        self.plot.remove()
+        self.plot = self.ax.scatter(self.X[:,0],self.X[:,1],self.X[:,2],
+                               picker=True, s=self.s, facecolors=self.fc,
+                               edgecolors=self.fc)
                
     def kill(self):
+        # end program and save altered data
         with open('done.npy', 'wb') as f:
             np.save(f, True) 
-        plt.close()
+
                
 
     def on_press(self, event):
@@ -119,54 +151,41 @@ class ScatterClick:
 
         ind = event.ind
         point = np.array([self.X[ind,0], self.X[ind,1], self.X[ind,2]])
-        fixed = False
-
-        for i in ind:
-            if self.X[i,3] == 1:
-                fixed = True
-                break
+        fixed = True if np.sum(self.X[ind,3]) > 0 else False
 
         if str(event.mouseevent.button) == "MouseButton.LEFT" and not fixed:
             for i in ind:
                 if i not in self.clicked:
                     self.clicked += [i]
-                    self.fc[i,:] = (1, 0, 0, 1)
-                    
+                    self.fc[i,:] = self.red
                 else:
                     self.clicked.remove(i)
-                    self.fc[i,:] = self.ogcolor
-                    
+                    self.fc[i,:] = self.blue
                 self.plot._facecolor3d = self.fc
                 self.plot._edgecolor3d = self.fc
             
         elif str(event.mouseevent.button) == "MouseButton.RIGHT" and fixed:
             for i in ind:
+                if self.X[i,3] != 0:
+                    self.undone += [i]
                 self.X[i,3:] = np.zeros(4)
-            self.quiver.remove()
-            self.quiver = self.ax.quiver(self.X[:,0], self.X[:,1], self.X[:,2], self.X[:,4], 
-                                         self.X[:,5], self.X[:,6], 
-                                         length=(np.max(x) - np.min(x))/self.k, color="black",
-                                         pivot="middle")    
-            self.fc[i,:] = self.ogcolor
+            self.redraw_arrows()   
+            self.fc[i,:] = self.blue
             self.plot._facecolor3d = self.fc
             self.plot._edgecolor3d = self.fc
         self.fig.canvas.draw_idle()
-        
-            
 
-# navigate to and open structure data
+          
+mpl.rcParams['toolbar'] = 'None'
+# navigate to and open structure and vector data
 os.chdir('../temp')
 with open('points.npy', 'rb') as f:
-    x = np.load(f)
-    y = np.load(f)
-    z = np.load(f)
+    X = np.load(f)
+    k = np.load(f)
+    s = np.load(f)
     cif = np.load(f)
-# check for previous iteration vectors to plot
-with open('arrows.npy', 'rb') as f:
-    cords = np.load(f, allow_pickle=True)
-    arrows = np.load(f, allow_pickle=True)
-    k = np.load(f, allow_pickle=True)
-pts = np.array([x,y,z]).T
+
 #plot and interact via ScatterClick class
-ScatterClick(pts, cif, cords, arrows, k)
+ScatterClick(X, cif, k, s)
+
 

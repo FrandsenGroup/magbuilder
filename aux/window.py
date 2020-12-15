@@ -1,12 +1,10 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow
-from PyQt5 import QtWidgets
 import sys
-import numpy as np
 import os
+import numpy as np
 
 def popup():
-    app = QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     w = QtWidgets.QWidget()
     w.setGeometry(50,50,200,200)
 
@@ -26,7 +24,7 @@ def popup():
             np.save(f, np.array([x,y,z]))
         os.chdir('..')
         w.close()
-
+    
     line_edit = QtWidgets.QLineEdit()
     line_edit.move(50,75)
     line_edit.returnPressed.connect(clicked1)
@@ -42,10 +40,11 @@ def popup():
     b1.clicked.connect(clicked1)
 
     b2 = QtWidgets.QPushButton()
-    b2.setText("Cancel")
+    b2.setText("Go Back")
     b2.move(50,150)
     b2.setAutoDefault(True)
     b2.clicked.connect(clicked2)
+    app.aboutToQuit.connect(clicked2)
     
     layout = QtWidgets.QVBoxLayout()
     layout.addWidget(line_edit)
@@ -56,6 +55,7 @@ def popup():
     w.setLayout(layout)
     w.show()
     sys.exit(app.exec_())
+
 os.chdir('../temp')
-if not os.path.exists("done.npy"):
+if not os.path.exists("done.npy") :
     popup()
