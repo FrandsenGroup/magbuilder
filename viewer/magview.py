@@ -23,6 +23,8 @@ class MagView:
         self.fig = plt.figure(figsize=(8.,6.)) # set and save figure object
         self.ax = self.fig.add_subplot(111, projection='3d') # make 3d
         self.plotted = []
+        self.magscale = np.ones(len(self.X))
+        self.quiver = []
         
         #scatter the structure data
         if len(self.X) == 0:
@@ -31,18 +33,12 @@ class MagView:
                                picker=True, s=self.s, facecolors=["C0"]*len(self.X[:,0]),
                                edgecolors=["C0"]*len(self.X[:,0]))
         if len(self.others) != 0:
+            self.tog = -1
             self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],
                                s=self.s/2, facecolors="gray", edgecolors="gray")
 
         self.set_plot_params(cif) # set color, axes, labels, title
         self.set_text()
-        
-
-        # plot quiver of arrows
-        self.quiver = self.ax.quiver(self.X[:,0], self.X[:,1], self.X[:,2],
-                        self.X[:,4], self.X[:,5], self.X[:,6], 
-                        length=2*self.scaling_magnitude/self.l,
-                        color="black", pivot="middle", arrow_length_ratio=0.3)
 
         # initialize functions called upon events
         self.fig.canvas.mpl_connect('close_event',self.on_close) # D, escape, enter
@@ -52,6 +48,10 @@ class MagView:
 
     def set_text(self):
         # text instructions on plot GUI
+        self.ax.text2D(-0.15,-0.12, 
+        "Press i to view control instructions", transform=self.ax.transAxes, fontweight='bold')
+
+        """
         self.ax.text2D(0.22,-0.04, 
         "Enter:", transform=self.ax.transAxes, fontweight='bold')
         self.ax.text2D(0.31,-0.04, 
@@ -80,7 +80,7 @@ class MagView:
         "CTRL + / CTRL -:", transform=self.ax.transAxes, fontweight='bold')
         self.ax.text2D(.79,-0.08, 
         "Zoom in or out", transform=self.ax.transAxes)
-             
+        """  
     def set_plot_params(self, cif):
         # set colors
         self.blue = np.array([0.12156863, 0.4666667, 0.70588235, 1.])
@@ -123,15 +123,21 @@ class MagView:
             os.chdir('../textgui')
             os.system('python3 setspin.py') 
             os.chdir('../temp')
-            if os.path.exists("vector.npy")
+            if os.path.exists("vector.npy"):
                 with open('vector.npy', 'rb') as f:
-                vector = np.load(f)
+                    vector = np.load(f)
+                    mag = np.load(f)
                 os.remove('vector.npy')
                 if len(vector) != 1:
                     norm = la.norm(vector)
                     if norm != 0:
-                        self.X[np.array(self.clicked),4:] = vector / norm
+                        self.X[np.array(self.clicked),4:] = vector / norm * np.sign(mag)
                         self.X[np.array(self.clicked),3] = 1
+                        self.magscale[np.array(self.clicked)] = np.abs(mag)
+            else:
+                self.fc[np.array(self.clicked),:] = self.blue
+            self.plot._facecolor3d = self.fc
+            self.plot._edgecolor3d = self.fc
             self.clicked = []
             self.redraw_arrows()
             self.fig.canvas.draw_idle()
@@ -164,17 +170,34 @@ class MagView:
             elif event.key == "ctrl+=": # zoom out of structure
                 self.zoom = 9*self.zoom/10 
                 self.axes_lim()
-        if event.key in {"right","left","down","up","ctrl+-","ctrl+="}:
+            elif event.key == "i":
+                os.chdir('../textgui')
+                os.system('python3 instructions.py') 
+                os.chdir('../temp')
+            elif event.key == "t":
+                if len(self.others) != 0:
+                    self.tog *= -1
+                    if self.tog == 1:
+                        self.fixed.remove()
+                    else:
+                        self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],s=self.s/2, facecolors="gray", edgecolors="gray")
+                    
+        if event.key in {"right","left","t","i","down","up","ctrl+-","ctrl+="}:
             # update canvas
             self.fig.canvas.draw_idle()
 
     def redraw_arrows(self):
         #remove and replot arrows
-        self.quiver.remove()
-        self.quiver = self.ax.quiver(self.X[:,0], self.X[:,1], self.X[:,2], self.X[:,4], 
-                                     self.X[:,5], self.X[:,6], 
-                                     length=2*self.scaling_magnitude/self.l, 
-                                     color="black", pivot="middle", arrow_length_ratio=0.3)
+
+        if len(self.quiver) != 0:
+            for i in range(len(self.quiver)):
+                self.quiver[i].remove()
+        self.quiver = []
+        for count, row in enumerate(self.X):
+            self.quiver += [self.ax.quiver(row[0], row[1], row[2], row[4], row[5], row[6], 
+                                     length=2*self.scaling_magnitude/self.l*self.magscale[count], 
+                                     color="black", pivot="middle", arrow_length_ratio=0.3)]
+
     def redraw_scatter(self):
         # remove and replot scattered points
         self.plot.remove()
@@ -183,7 +206,7 @@ class MagView:
                                picker=True, s=self.s, facecolors=self.fc,
                                edgecolors=self.fc)
         self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],
-                               s=self.s/2, facecolors="gray", edgecolors="gray")
+                               s=self.s/3, facecolors="gray", edgecolors="gray")
 
     def on_click(self, event):
         # clicking the artist changes the color and saves the coords in self.clicked
