@@ -6,7 +6,7 @@ import os
 import numpy.linalg as la
 
 class MagView:
-    def __init__(self, X, cif, l, s):
+    def __init__(self, X, cif, l, s, others=[]):
         """
         X : n x 7 ndarray with coordinate points in first 3 cols, 
                       1 for if theres a vector in col 4 and  has
@@ -15,6 +15,7 @@ class MagView:
         l = size for arrows
         s = dot size
         """
+        self.others = others
         self.clicked = []                      # to contain points receiving a vector
         self.l = l                             # default length of arrows
         self.s = s                             # default size of point
@@ -24,10 +25,15 @@ class MagView:
         self.plotted = []
         
         #scatter the structure data
+        if len(self.X) == 0:
+            raise ValueError("no selected indeces")
         self.plot = self.ax.scatter(self.X[:,0],self.X[:,1],self.X[:,2],
                                picker=True, s=self.s, facecolors=["C0"]*len(self.X[:,0]),
                                edgecolors=["C0"]*len(self.X[:,0]))
-        
+        if len(self.others) != 0:
+            self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],
+                               s=self.s/2, facecolors="gray", edgecolors="gray")
+
         self.set_plot_params(cif) # set color, axes, labels, title
         self.set_text()
         
@@ -55,12 +61,12 @@ class MagView:
         self.ax.text2D(0.56,-0.04, 
         "Exit Program", transform=self.ax.transAxes)
         self.ax.text2D(-.05,-0.08, 
-        "Right Click:", transform=self.ax.transAxes, fontweight='bold')
-        self.ax.text2D(0.11,-0.08, 
+        "L. Click:", transform=self.ax.transAxes, fontweight='bold')
+        self.ax.text2D(0.08,-0.08, 
         "Select next spin assignments or deselect", transform=self.ax.transAxes)
         self.ax.text2D(-0.15,-0.12, 
-        "Left Click:", transform=self.ax.transAxes, fontweight='bold')
-        self.ax.text2D(-0.01,-0.12, 
+        "R. Click:", transform=self.ax.transAxes, fontweight='bold')
+        self.ax.text2D(-0.03,-0.12, 
         "Undo previous spin assignment ", transform=self.ax.transAxes)
         self.ax.text2D(0.350,-0.12, 
         "U / D Arrows:", transform=self.ax.transAxes, fontweight='bold')
@@ -83,6 +89,7 @@ class MagView:
 
         # graph cosmetics
         title = "\n\n"+str(cif)
+        self.fig.canvas.set_window_title("MagPlotSpin")
         self.fig.suptitle(title, fontweight='bold')
         self.ax.set_xticks([])
         self.ax.set_yticks([])
@@ -92,7 +99,10 @@ class MagView:
         self.ax.set_zlabel("Z", fontweight='bold')
             
         # center and scale all axes equally
-        self.centroid = np.sum(self.X[:,:3], axis=0) / len(self.X)
+        if len(self.others) != 0:
+            self.centroid = (np.sum(self.X[:,:3], axis=0) + np.sum(self.others, axis=0)) / (len(self.X) + len(self.others))
+        else: 
+            self.centroid = np.sum(self.X[:,:3], axis=0) / len(self.X)
         self.scaling_magnitude = np.max(np.abs(self.X[:,:3] - self.centroid))
         self.zoom = 1.2
         self.axes_lim()
@@ -103,31 +113,33 @@ class MagView:
         self.ax.set_ylim3d(self.centroid[1] - self.zoom*self.scaling_magnitude, self.centroid[1] + self.zoom*self.scaling_magnitude)
         self.ax.set_zlim3d(self.centroid[2] - self.zoom*self.scaling_magnitude, self.centroid[2] + self.zoom*self.scaling_magnitude)
     
-    def on_close(self, event):
+    def on_close(self, event=[]):
+        os.chdir('../temp')
         with open('X.npy', 'wb') as f:
             np.save(f, self.X)
         
     def enter(self):
         if (len(self.clicked) != 0):
-            self.fig.canvas.draw_idle()
-            os.chdir('..')
-            os.system('python3 window.py') 
-            os.chdir('./temp')
-            with open('vector.npy', 'rb') as f:
+            os.chdir('../textgui')
+            os.system('python3 setspin.py') 
+            os.chdir('../temp')
+            if os.path.exists("vector.npy")
+                with open('vector.npy', 'rb') as f:
                 vector = np.load(f)
-            
-            if len(vector) != 1:
-                norm = la.norm(vector)
-                if norm != 0:
-                    self.X[np.array(self.clicked),4:] = vector / norm
-                    self.X[np.array(self.clicked),3] = 1
+                os.remove('vector.npy')
+                if len(vector) != 1:
+                    norm = la.norm(vector)
+                    if norm != 0:
+                        self.X[np.array(self.clicked),4:] = vector / norm
+                        self.X[np.array(self.clicked),3] = 1
             self.clicked = []
             self.redraw_arrows()
             self.fig.canvas.draw_idle()
-            self.plotted = (self.X[:,3] == 1).nonzero()                 
+            self.plotted = (self.X[:,3] == 1).nonzero()   
+        else:
+            self.on_close()              
 
     def on_key_press(self, event):
-
         if event.key == "enter": # proceed to save and continue to vector assignemnt
             self.enter()
         elif (event.key == "escape"): # end program
@@ -152,7 +164,7 @@ class MagView:
             elif event.key == "ctrl+=": # zoom out of structure
                 self.zoom = 9*self.zoom/10 
                 self.axes_lim()
-        if event.key in ["right","left","down","up","ctrl+-","ctrl+="]:
+        if event.key in {"right","left","down","up","ctrl+-","ctrl+="}:
             # update canvas
             self.fig.canvas.draw_idle()
 
@@ -166,9 +178,12 @@ class MagView:
     def redraw_scatter(self):
         # remove and replot scattered points
         self.plot.remove()
+        self.fixed.remove()
         self.plot = self.ax.scatter(self.X[:,0],self.X[:,1],self.X[:,2],
                                picker=True, s=self.s, facecolors=self.fc,
                                edgecolors=self.fc)
+        self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],
+                               s=self.s/2, facecolors="gray", edgecolors="gray")
 
     def on_click(self, event):
         # clicking the artist changes the color and saves the coords in self.clicked
