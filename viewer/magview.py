@@ -26,6 +26,7 @@ class MagView:
         self.magscale = np.ones(len(self.X))
         self.quiver = []
         
+        
         #scatter the structure data
         if len(self.X) == 0:
             raise ValueError("no selected indeces")
@@ -35,10 +36,11 @@ class MagView:
         if len(self.others) != 0:
             self.tog = -1
             self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],
-                               s=self.s/2, facecolors="gray", edgecolors="gray")
+                               s=self.s/3, facecolors="gray", edgecolors="gray")
 
         self.set_plot_params(cif) # set color, axes, labels, title
         self.set_text()
+        self.setlegend()
 
         # initialize functions called upon events
         self.fig.canvas.mpl_connect('close_event',self.on_close) # D, escape, enter
@@ -46,14 +48,24 @@ class MagView:
         self.fig.canvas.mpl_connect('key_release_event',self.on_key_press) # zoom / scale 
         plt.show()
 
+    def setlegend(self):
+        dotsize = 8
+        
+        legend_elements = [mpl.lines.Line2D([0], [0], lw=0,marker='o', color=self.blue, label='Can be Assigned', markerfacecolor=self.blue, markersize=dotsize),
+                           mpl.lines.Line2D([0], [0],  lw=0,marker='o', color=self.red, label='Selected or\nAssigned',markerfacecolor=self.red, markersize=dotsize)]
+        if len(self.others) != 0:
+            legend_elements += [mpl.lines.Line2D([0], [0], lw=0, marker='o', color='gray', label='Non-Magnetic',markerfacecolor='gray', markersize=dotsize)]
+
+        self.ax.legend(handles=legend_elements, fontsize='x-small')
+
     def set_text(self):
         # text instructions on plot GUI
-        self.ax.text2D(-0.15,-0.12, 
-        "Press i to view control instructions", transform=self.ax.transAxes, fontweight='bold')
+        self.ax.text2D(0.5,-0.08,s= 
+        "Press i to view control instructions", horizontalalignment='center', transform=self.ax.transAxes, fontweight='bold')
 
         """
         self.ax.text2D(0.22,-0.04, 
-        "Enter:", transform=self.ax.transAxes, fontweight='bold')
+        "Enter:", trans-form=self.ax.transAxes, fontweight='bold')
         self.ax.text2D(0.31,-0.04, 
         "Assign spins", transform=self.ax.transAxes)
         self.ax.text2D(0.46,-0.04, 
@@ -201,12 +213,14 @@ class MagView:
     def redraw_scatter(self):
         # remove and replot scattered points
         self.plot.remove()
-        self.fixed.remove()
+        if len(self.others) != 0:
+            self.fixed.remove()
+            self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],
+                               s=self.s/3, facecolors="gray", edgecolors="gray")
+
         self.plot = self.ax.scatter(self.X[:,0],self.X[:,1],self.X[:,2],
                                picker=True, s=self.s, facecolors=self.fc,
                                edgecolors=self.fc)
-        self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],
-                               s=self.s/3, facecolors="gray", edgecolors="gray")
 
     def on_click(self, event):
         # clicking the artist changes the color and saves the coords in self.clicked

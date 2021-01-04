@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QIcon, QPixmap
+from PyQt5.QtGui import QIcon
 import sys
 import os
 import numpy as np
@@ -49,12 +49,20 @@ class window(QtWidgets.QWidget):
         self.label.move(50,0)
         
         self.maglabel = QtWidgets.QLabel()
-        self.maglabel.setText("Magnitude:\n(Optional: defaults to unit length)")
+        self.maglabel.setText("Magnitude:\n(Optional: will default to unit length)")
         self.maglabel.move(50,75)
 
         self.line_edit2 = QtWidgets.QLineEdit()
         self.line_edit2.move(50,25)
         self.line_edit2.returnPressed.connect(self.clicked1)
+
+        self.proplabel = QtWidgets.QLabel()
+        self.proplabel.setText("Propagation Vector:\n(Optional: will default to [0, 0, 0])")
+        self.proplabel.move(50,85)
+
+        self.line_edit3 = QtWidgets.QLineEdit()
+        self.line_edit3.move(50,25)
+        self.line_edit3.returnPressed.connect(self.clicked1)
 
         self.b1 = QtWidgets.QPushButton()
         self.b1.setText("Set spin")
@@ -78,6 +86,8 @@ class window(QtWidgets.QWidget):
         layout.addWidget(self.b3)
         layout.addWidget(self.maglabel)
         layout.addWidget(self.line_edit2)
+        layout.addWidget(self.proplabel)
+        layout.addWidget(self.line_edit3)
         layout.addWidget(self.b1)
         layout.addWidget(self.b2)
     
