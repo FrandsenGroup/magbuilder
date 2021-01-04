@@ -1,4 +1,5 @@
-MagPlotSpin
+MagPlotSpin:
+-
 A GUI Interface to assign magnetic spins to molecular structures.
 
 To be integrated into diffpy.magpdf (@benfrandsen) to facilitate spin assignment when implementing the program
@@ -27,5 +28,5 @@ Instructions to use:
 2. Decide which atoms can be selected, either individually or by atom type
 3. In the viewer, assign the atoms with spins (press i in viewer to see controls)
 4. In in popup, one can assign a spin to all the atoms selected and optionally include a non-unit magnitude or non-zero propagation vector
-5. Upon closing the viewer by pressing close or escape, the spins, magnitudes, and propagation vectors are saved
+5. Upon closing the viewer by pressing close or escape, the spins, magnitudes, and propagation vectors are saved in the temp folder
 
