@@ -1,19 +1,31 @@
-A demo of how to visualize 3d mulecular structures and iteratively select and interface with individual atoms to save and visualize magnetic spins.  To be integrated into PDFgui, a part of the larger diffpy aparatus
+MagPlotSpin
+A GUI Interface to assign magnetic spins to molecular structures.
 
-Necessary libraries:
+To be integrated into diffpy.magpdf (@benfrandsen) to facilitate spin assignment when implementing the program
+
+Necessary libraries (not included as a standard module):
+-
 - diffpy/Structure
 - numpy
 - matplotlib
 - PyQT5
 
-Instructions:
-1. Place .cif file in _cif folder
-2. Enter file name in plot.py file
-3. Run plot.py in conda environment with diffpy installed
+Standard modules imported:
+-
+- os
+- sys
+- tkinter
 
-Visualization Controls:
-- Left click to select atoms to which a spin is added, left click to undo
-- Once all atoms to have spins added are selected, close the window or press enter
-- The popup will prompt user for dx,dy,dz vector coordinates for the selected atoms.  Press Enter or Set Spins to set.  Cancel to not set spins.
-- To undo a made spin, righ click on the red vectorized atom
-- To exit once done, press the escape or "d" keys to end program
+Instructions to run:
+-
+1. Place .cif file in \_cif folder _(this is the default folder opened to load a .cif file)_
+2. Run magplot.py in conda environment with diffpy installed
+
+Instructions to use:
+- 
+1. Select file either in \_cif folder or another folder
+2. Decide which atoms can be selected, either individually or by atom type
+3. In the viewer, assign the atoms with spins (press i in viewer to see controls)
+4. In in popup, one can assign a spin to all the atoms selected and optionally include a non-unit magnitude or non-zero propagation vector
+5. Upon closing the viewer by pressing close or escape, the spins, magnitudes, and propagation vectors are saved
+
