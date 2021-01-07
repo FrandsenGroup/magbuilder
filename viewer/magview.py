@@ -8,12 +8,48 @@ import numpy.linalg as la
 class MagView:
     def __init__(self, X, cif, l, s, others=[]):
         """
+        parameters:
+
         X : n x 7 ndarray with coordinate points in first 3 cols, 
                       1 for if theres a vector in col 4 and  has
                       the associated vectors in 5,6,7
         cif : filename
         l = size for arrows
         s = dot size
+        others = non-magnetic coordinates that ar plotted for reference
+
+        --------------------------------------------------
+                          Attributes
+        --------------------------------------------------
+
+        self.X         : copy of the X array imput into the class
+        self.others    : copy of input other array
+        self.l         : start length of arrows
+        self.s         : start size of atoms
+        self.clicked   : list that keeps track of indices that are clicked during 
+                         any given iteration
+        self.fig       : mpl figure object
+        self.ax        : mpl axes object
+        self.plotted   : list that saves the indices of atoms with associated 
+                         vectors
+        self.magscale  : array saving the magnitudes of all spins
+        self.quiver    : list of mpl quiver objects with on per coordinate
+        self.plot      : mpl scatter object of magnetic coords
+        self.fixed     : mpl scatter object of non-magnetic coords
+        self.tog       : Boolean for if the non--magnetic atoms are toggled
+                         or not
+        self.blue      : array of values associated to a shade of blue
+        self.red       : array of values associated to a shade of red
+        self.fc        : array of color values per coordinate
+        self.centroid  : centroid of the coordinate (will be centered)
+        self.scaling_magnitude
+                       : max coordinate distance from centroid.  Used for axes
+                         scaling to ensure centroid is centered and all points
+                         are in equally scaled axes
+        self.zoom      : zoom in / out factor
+        
+
+
         """
         self.others = others
         self.clicked = []                      # to contain points receiving a vector
@@ -25,22 +61,26 @@ class MagView:
         self.plotted = []
         self.magscale = np.ones(len(self.X))
         self.quiver = []
-        
+
         
         #scatter the structure data
-        if len(self.X) == 0:
+        if len(self.X) == 0: # check if there are any coordinates
             raise ValueError("no selected indeces")
+        
+        # plot all X values
         self.plot = self.ax.scatter(self.X[:,0],self.X[:,1],self.X[:,2],
                                picker=True, s=self.s, facecolors=["C0"]*len(self.X[:,0]),
                                edgecolors=["C0"]*len(self.X[:,0]))
+        
+        # plot all non-magnetic coordinates if any
         if len(self.others) != 0:
-            self.tog = -1
+            self.tog = False
             self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],
                                s=self.s/3, facecolors="gray", edgecolors="gray")
 
         self.set_plot_params(cif) # set color, axes, labels, title
-        self.set_text()
-        self.setlegend()
+        self.set_text() # instructions string
+        self.setlegend() # plot legend
 
         # initialize functions called upon events
         self.fig.canvas.mpl_connect('close_event',self.on_close) # D, escape, enter
@@ -49,50 +89,24 @@ class MagView:
         plt.show()
 
     def setlegend(self):
-        dotsize = 8
         
+        dotsize = 8  # size of dot in legend
+        
+       # build legend and include non-magnetic atoms if any
         legend_elements = [mpl.lines.Line2D([0], [0], lw=0,marker='o', color=self.blue, label='Can be Assigned', markerfacecolor=self.blue, markersize=dotsize),
                            mpl.lines.Line2D([0], [0],  lw=0,marker='o', color=self.red, label='Selected or\nAssigned',markerfacecolor=self.red, markersize=dotsize)]
         if len(self.others) != 0:
             legend_elements += [mpl.lines.Line2D([0], [0], lw=0, marker='o', color='gray', label='Non-Magnetic',markerfacecolor='gray', markersize=dotsize)]
-
+        
+        # put legend on axes
         self.ax.legend(handles=legend_elements, fontsize='x-small')
 
     def set_text(self):
         # text instructions on plot GUI
         self.ax.text2D(0.5,-0.08,s= 
-        "Press i to view control instructions", horizontalalignment='center', transform=self.ax.transAxes, fontweight='bold')
+        "Press i to view control instructions", horizontalalignment='center', 
+        transform=self.ax.transAxes, fontweight='bold')
 
-        """
-        self.ax.text2D(0.22,-0.04, 
-        "Enter:", trans-form=self.ax.transAxes, fontweight='bold')
-        self.ax.text2D(0.31,-0.04, 
-        "Assign spins", transform=self.ax.transAxes)
-        self.ax.text2D(0.46,-0.04, 
-        "Escape:", transform=self.ax.transAxes, fontweight='bold')
-        self.ax.text2D(0.56,-0.04, 
-        "Exit Program", transform=self.ax.transAxes)
-        self.ax.text2D(-.05,-0.08, 
-        "L. Click:", transform=self.ax.transAxes, fontweight='bold')
-        self.ax.text2D(0.08,-0.08, 
-        "Select next spin assignments or deselect", transform=self.ax.transAxes)
-        self.ax.text2D(-0.15,-0.12, 
-        "R. Click:", transform=self.ax.transAxes, fontweight='bold')
-        self.ax.text2D(-0.03,-0.12, 
-        "Undo previous spin assignment ", transform=self.ax.transAxes)
-        self.ax.text2D(0.350,-0.12, 
-        "U / D Arrows:", transform=self.ax.transAxes, fontweight='bold')
-        self.ax.text2D(0.525,-0.12, 
-        "Change atom size", transform=self.ax.transAxes)
-        self.ax.text2D(0.740,-0.12, 
-        "R / L Arrows:", transform=self.ax.transAxes, fontweight='bold')
-        self.ax.text2D(0.91,-0.12, 
-        "Change arrow size", transform=self.ax.transAxes)
-        self.ax.text2D(.58,-0.08, 
-        "CTRL + / CTRL -:", transform=self.ax.transAxes, fontweight='bold')
-        self.ax.text2D(.79,-0.08, 
-        "Zoom in or out", transform=self.ax.transAxes)
-        """  
     def set_plot_params(self, cif):
         # set colors
         self.blue = np.array([0.12156863, 0.4666667, 0.70588235, 1.])
@@ -103,9 +117,13 @@ class MagView:
         title = "\n\n"+str(cif)
         self.fig.canvas.set_window_title("MagPlotSpin")
         self.fig.suptitle(title, fontweight='bold')
+        
+        # remove all axes ticks
         self.ax.set_xticks([])
         self.ax.set_yticks([])
         self.ax.set_zticks([])
+
+        # label axes in bold
         self.ax.set_xlabel("X", fontweight='bold')
         self.ax.set_ylabel("Y", fontweight='bold')
         self.ax.set_zlabel("Z", fontweight='bold')
@@ -115,6 +133,8 @@ class MagView:
             self.centroid = (np.sum(self.X[:,:3], axis=0) + np.sum(self.others, axis=0)) / (len(self.X) + len(self.others))
         else: 
             self.centroid = np.sum(self.X[:,:3], axis=0) / len(self.X)
+
+        # get coordinate furthest from centroid and scale axes accordingly, centering the plot
         self.scaling_magnitude = np.max(np.abs(self.X[:,:3] - self.centroid))
         self.zoom = 1.2
         self.axes_lim()
@@ -126,60 +146,58 @@ class MagView:
         self.ax.set_zlim3d(self.centroid[2] - self.zoom*self.scaling_magnitude, self.centroid[2] + self.zoom*self.scaling_magnitude)
     
     def on_close(self, event=[]):
+        # save X array in temp folder upon completion
         os.chdir('../temp')
         with open('X.npy', 'wb') as f:
             np.save(f, self.X)
         
     def enter(self):
-        if (len(self.clicked) != 0):
-            os.chdir('../textgui')
-            os.system('python3 setspin.py') 
-            os.chdir('../temp')
-            if os.path.exists("vector.npy"):
-                with open('vector.npy', 'rb') as f:
-                    vector = np.load(f)
-                    mag = np.load(f)
-                os.remove('vector.npy')
-                if len(vector) != 1:
-                    norm = la.norm(vector)
-                    if norm != 0:
-                        self.X[np.array(self.clicked),4:] = vector / norm * np.sign(mag)
-                        self.X[np.array(self.clicked),3] = 1
-                        self.magscale[np.array(self.clicked)] = np.abs(mag)
-            else:
-                self.fc[np.array(self.clicked),:] = self.blue
-            self.plot._facecolor3d = self.fc
-            self.plot._edgecolor3d = self.fc
-            self.clicked = []
-            self.redraw_arrows()
-            self.fig.canvas.draw_idle()
-            self.plotted = (self.X[:,3] == 1).nonzero()   
+
+        os.chdir('../textgui')
+        os.system('python3 setspin.py') 
+        os.chdir('../temp')
+        if os.path.exists("vector.npy"):
+            with open('vector.npy', 'rb') as f:
+                vector = np.load(f)
+                mag = np.load(f)
+            os.remove('vector.npy')
+            if len(vector) != 1:
+                norm = la.norm(vector)
+                if norm != 0:
+                    self.X[np.array(self.clicked),4:] = vector / norm * np.sign(mag)
+                    self.X[np.array(self.clicked),3] = 1
+                    self.magscale[np.array(self.clicked)] = np.abs(mag)
         else:
-            self.on_close()              
+            self.fc[np.array(self.clicked),:] = self.blue
+        self.plot._facecolor3d = self.fc
+        self.plot._edgecolor3d = self.fc
+        self.clicked = []
+        self.redraw_arrows()
+        self.plotted = (self.X[:,3] == 1).nonzero()                
 
     def on_key_press(self, event):
-        if event.key == "enter": # proceed to save and continue to vector assignemnt
+        if (event.key == "enter") and (len(self.clicked) != 0): # proceed to save and continue to vector assignemnt
             self.enter()
         elif (event.key == "escape"): # end program
             plt.close()
 
         else:
-            if (event.key == "right") and (len(self.plotted) != 0): # grow arrow
+            if (event.key == "right") and (len(self.plotted) != 0) and (self.scaling_magnitude/self.l) < .26: # grow arrow
                 self.l = 0.9*self.l
                 self.redraw_arrows()
-            elif (event.key == "left") and (len(self.plotted) != 0): # shrink arrow
+            elif (event.key == "left") and (len(self.plotted) != 0) and (self.scaling_magnitude/self.l) > .04: # shrink arrow
                 self.l = 10*self.l/9
                 self.redraw_arrows()
-            elif event.key == "down": # shrink size of point
+            elif event.key == "down" and self.s > 3: # shrink size of point
                 self.s = 0.9*self.s
                 self.redraw_scatter()
-            elif event.key == "up": # grow size of point
+            elif event.key == "up" and self.s < 1600: # grow size of point
                 self.s = 10*self.s/9
                 self.redraw_scatter()
-            elif event.key == "ctrl+-": # zoom into structure
+            elif event.key == "ctrl+-" and self.zoom < 2.5: # zoom out of structure
                 self.zoom = 10*self.zoom/9
                 self.axes_lim()
-            elif event.key == "ctrl+=": # zoom out of structure
+            elif event.key == "ctrl+=" and self.zoom > 0.5: # zoom into structure
                 self.zoom = 9*self.zoom/10 
                 self.axes_lim()
             elif event.key == "i":
@@ -188,13 +206,13 @@ class MagView:
                 os.chdir('../temp')
             elif event.key == "t":
                 if len(self.others) != 0:
-                    self.tog *= -1
-                    if self.tog == 1:
+                    self.tog = bool(1 - self.tog)
+                    if self.tog:
                         self.fixed.remove()
                     else:
-                        self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],s=self.s/2, facecolors="gray", edgecolors="gray")
+                        self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],s=self.s/3, facecolors="gray", edgecolors="gray")
                     
-        if event.key in {"right","left","t","i","down","up","ctrl+-","ctrl+="}:
+        if event.key in {"right","left","t","i","down","up","ctrl+-","ctrl+=","enter"}:
             # update canvas
             self.fig.canvas.draw_idle()
 
@@ -209,11 +227,11 @@ class MagView:
             self.quiver += [self.ax.quiver(row[0], row[1], row[2], row[4], row[5], row[6], 
                                      length=2*self.scaling_magnitude/self.l*self.magscale[count], 
                                      color="black", pivot="middle", arrow_length_ratio=0.3)]
-
+        
     def redraw_scatter(self):
         # remove and replot scattered points
         self.plot.remove()
-        if len(self.others) != 0:
+        if (len(self.others) != 0) and (self.tog == False):
             self.fixed.remove()
             self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],
                                s=self.s/3, facecolors="gray", edgecolors="gray")

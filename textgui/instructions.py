@@ -20,7 +20,7 @@ class window(QtWidgets.QWidget):
         self.setWindowTitle('Instructions')
         self.setGeometry(50,50,300,200)
 
-        lab = "Mouse:\nL. Click: Select atoms for next spin assignment\nR. Click: Undo previous spin assignments\n\nKeyboard:\nEnter: Assign Spins after selecting\nt : Toggle non-magnetic atoms\ni : Instructions popup\nEscape: Exit Program\nCTRL + / CTRL - : Zoom in or out\nU / D Arrows: Change atom size\nR / L Arrows: Change vector length"
+        lab = "<b>Mouse Controls</b>:<br><br><b>L. Click</b>: Select atoms for next spin assignment<br><b>R. Click</b>: Undo previous spin assignments<br><br><b>Keyboard Controls</b>:<br><br><b>Enter</b>: Assign Spins after selecting<br><b>t</b> : Toggle non-magnetic atoms<br><b>i</b> : Instructions popup<br><b>Escape</b>: Exit Program<br><b>CTRL +</b> / <b>CTRL -</b> : Zoom in or out<br><b>U / D Arrows</b>: Change atom size<br><b>R</b> / <b>L Arrows</b>: Change vector length"
 
         self.l1 = QtWidgets.QLabel()
         self.l1.setText(lab)

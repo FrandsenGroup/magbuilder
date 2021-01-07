@@ -30,9 +30,9 @@ class window(QtWidgets.QWidget):
 
     def check_radio(self):
         if self.b3.isChecked():
-            self.label.setText("Spin Vector\nFormat: a,b,c")
+            self.label.setText("<b>Spin Vector</b><br>Format: <b>a,b,c</b>")
         else:
-            self.label.setText("Spin Vector\nFormat: sx,sy,sz")
+            self.label.setText("<b>Spin Vector</b><br>Format: <b>sx,sy,sz</b>")
 
     def set_ui(self):
         self.mag = 1
@@ -45,11 +45,11 @@ class window(QtWidgets.QWidget):
         self.line_edit1.returnPressed.connect(self.clicked1)
 
         self.label = QtWidgets.QLabel()
-        self.label.setText("Spin Vector\nFormat: sx,sy,sz")
+        self.label.setText("<b>Spin Vector</b><br>Format: <b>sx,sy,sz</b>")
         self.label.move(50,0)
         
         self.maglabel = QtWidgets.QLabel()
-        self.maglabel.setText("Magnitude:\n(Optional: will default to unit length)")
+        self.maglabel.setText("<b>Magnitude</b><br>(Optional: will default to unit length)")
         self.maglabel.move(50,75)
 
         self.line_edit2 = QtWidgets.QLineEdit()
@@ -57,7 +57,7 @@ class window(QtWidgets.QWidget):
         self.line_edit2.returnPressed.connect(self.clicked1)
 
         self.proplabel = QtWidgets.QLabel()
-        self.proplabel.setText("Propagation Vector:\n(Optional: will default to [0, 0, 0])")
+        self.proplabel.setText("<b>Propagation Vector</b><br>(Optional: will default to [0, 0, 0])")
         self.proplabel.move(50,85)
 
         self.line_edit3 = QtWidgets.QLineEdit()
@@ -76,7 +76,7 @@ class window(QtWidgets.QWidget):
         self.b2.clicked.connect(self.clicked2)
     
 
-        self.b3 = QtWidgets.QCheckBox("Crystallographic Coordinates")
+        self.b3 = QtWidgets.QCheckBox("Crystallographic Coordinates (a, b, c)")
         self.b3.toggled.connect(self.check_radio)
         self.b3.move(50,50)
             
