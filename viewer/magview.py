@@ -47,10 +47,9 @@ class MagView:
                          scaling to ensure centroid is centered and all points
                          are in equally scaled axes
         self.zoom      : zoom in / out factor
-        
-
 
         """
+
         self.others = others
         self.clicked = []                      # to contain points receiving a vector
         self.l = l                             # default length of arrows
