@@ -6,50 +6,49 @@ import os
 import numpy.linalg as la
 
 class MagView:
+    """
+    Arguments:
+
+        X (ndarray, n x 7) : coordinate points in first 3 cols, 
+            1 for if theres a vector in col 4 and has the associated 
+            vectors in 5,6,7
+        cif (string) : filename
+        l (int) : size for arrows
+        s (int) : dot size in plot
+        others (ndarray, m x 7) : non-magnetic coordinates that are
+            plotted for reference
+    """
+
     def __init__(self, X, cif, l, s, others=[]):
         """
-        parameters:
-
-        X : n x 7 ndarray with coordinate points in first 3 cols, 
-                      1 for if theres a vector in col 4 and  has
-                      the associated vectors in 5,6,7
-        cif : filename
-        l = size for arrows
-        s = dot size
-        others = non-magnetic coordinates that ar plotted for reference
-
-        --------------------------------------------------
-                          Attributes
-        --------------------------------------------------
-
-        self.X         : copy of the X array imput into the class
-        self.others    : copy of input other array
-        self.l         : start length of arrows
-        self.s         : start size of atoms
-        self.clicked   : list that keeps track of indices that are clicked during 
-                         any given iteration
-        self.fig       : mpl figure object
-        self.ax        : mpl axes object
-        self.plotted   : list that saves the indices of atoms with associated 
-                         vectors
-        self.magscale  : array saving the magnitudes of all spins
-        self.quiver    : list of mpl quiver objects with on per coordinate
-        self.plot      : mpl scatter object of magnetic coords
-        self.fixed     : mpl scatter object of non-magnetic coords
-        self.tog       : Boolean for if the non--magnetic atoms are toggled
-                         or not
-        self.blue      : array of values associated to a shade of blue
-        self.red       : array of values associated to a shade of red
-        self.fc        : array of color values per coordinate
-        self.centroid  : centroid of the coordinate (will be centered)
-        self.scaling_magnitude
-                       : max coordinate distance from centroid.  Used for axes
-                         scaling to ensure centroid is centered and all points
-                         are in equally scaled axes
-        self.zoom      : zoom in / out factor
+        Attributes:
+        
+            self.X         : (ndarray, (n,7)) copy of the X array imput into the class
+            self.others    : (ndarray, (m,3)) copy of input other array
+            self.l         : (int) length scale of arrows
+            self.s         : (int) size scale of atoms
+            self.clicked   : (list) keeps track of indices that are clicked during 
+                             any given iteration
+            self.fig       : (mpl figure object)
+            self.ax        : (mpl axes object)
+            self.plotted   : (list) saves the indices of atoms with associated 
+                             vectors / arrows
+            self.magscale  : (ndarray, shape: (m,)) saving the magnitudes of all spins
+            self.quiver    : (list, (m)) mpl quiver objects with one per coordinate
+            self.plot      : (mpl scatter object) magnetic coords dots
+            self.fixed     : (mpl scatter object) non-magnetic coords dots
+            self.tog       : (bool) True if the non-magnetic atoms are toggled
+            self.blue      : (ndarray, (4,)) values associated to a shade of blue
+            self.red       : (ndarray, (4,)) values associated to a shade of red
+            self.fc        : (ndarray, (n,4)) array of color values per coordinate
+            self.centroid  : (ndarray, (3,)) centroid of the structure
+            self.axscalefactor
+                           : (ndarray, (3,)) max coordinate distance from centroid 
+                             along each axis.  Used for axes scaling to ensure centroid 
+                             is centered and all points are in equally scaled axes
+            self.zoom      : (float) zoom in / out factor
 
         """
-
         self.others = others
         self.clicked = []                      # to contain points receiving a vector
         self.l = l                             # default length of arrows
@@ -78,7 +77,7 @@ class MagView:
                                s=self.s/3, facecolors="gray", edgecolors="gray")
 
         self.set_plot_params(cif) # set color, axes, labels, title
-        self.set_text() # instructions string
+        self.plot_text() # instructions string
         self.setlegend() # plot legend
 
         # initialize functions called upon events
@@ -88,25 +87,49 @@ class MagView:
         plt.show()
 
     def setlegend(self):
-        
+        """ 
+        build and plot a custom legend on the figure to label 
+        the different scatterplot colors
+        """
         dotsize = 8  # size of dot in legend
         
        # build legend and include non-magnetic atoms if any
-        legend_elements = [mpl.lines.Line2D([0], [0], lw=0,marker='o', color=self.blue, label='Can be Assigned', markerfacecolor=self.blue, markersize=dotsize),
-                           mpl.lines.Line2D([0], [0],  lw=0,marker='o', color=self.red, label='Selected or\nAssigned',markerfacecolor=self.red, markersize=dotsize)]
-        if len(self.others) != 0:
-            legend_elements += [mpl.lines.Line2D([0], [0], lw=0, marker='o', color='gray', label='Non-Magnetic',markerfacecolor='gray', markersize=dotsize)]
+        legend_elements = [mpl.lines.Line2D([0], [0], 
+                           lw=0,marker='o', color=self.blue, 
+                           label='Can be Assigned', 
+                           markerfacecolor=self.blue, 
+                           markersize=dotsize),
+                           mpl.lines.Line2D([0], [0],  
+                           lw=0,marker='o', color=self.red, 
+                           label='Selected or\nAssigned',
+                           markerfacecolor=self.red, 
+                           markersize=dotsize)]
+        if len(self.others) != 0: # if non-magnetic atoms in the structure, add gray to legend
+            legend_elements += [mpl.lines.Line2D([0], [0], 
+                                lw=0, marker='o', color='gray', 
+                                label='Non-Magnetic',markerfacecolor='gray', 
+                                markersize=dotsize)]
         
-        # put legend on axes
+        # plot legend on axes
         self.ax.legend(handles=legend_elements, fontsize='x-small')
 
-    def set_text(self):
+    def plot_text(self):
+        """ sets the text on the bottom center of the plot
+        telling user how to access instructions """
+
         # text instructions on plot GUI
         self.ax.text2D(0.5,-0.08,s= 
         "Press i to view control instructions", horizontalalignment='center', 
         transform=self.ax.transAxes, fontweight='bold')
 
     def set_plot_params(self, cif):
+        """ sets plot parameters such as:
+        colors for selected / non-selected
+        plot and window titles
+        removes axis ticks
+        label axes x,y,z
+        center plot around centroid and fit axes to cover all of the structure
+        """
         # set colors
         self.blue = np.array([0.12156863, 0.4666667, 0.70588235, 1.])
         self.red = np.array([1,0,0,1])
@@ -134,32 +157,43 @@ class MagView:
             self.centroid = np.sum(self.X[:,:3], axis=0) / len(self.X)
 
         # get coordinate furthest from centroid and scale axes accordingly, centering the plot
-        self.scaling_magnitude = np.max(np.abs(self.X[:,:3] - self.centroid))
+        self.axscalefactor = np.max(np.abs(self.X[:,:3] - self.centroid))
         self.zoom = 1.2
-        self.axes_lim()
-            
-    def axes_lim(self):
-        #scale and center plot
-        self.ax.set_xlim3d(self.centroid[0] - self.zoom*self.scaling_magnitude, self.centroid[0] + self.zoom*self.scaling_magnitude)
-        self.ax.set_ylim3d(self.centroid[1] - self.zoom*self.scaling_magnitude, self.centroid[1] + self.zoom*self.scaling_magnitude)
-        self.ax.set_zlim3d(self.centroid[2] - self.zoom*self.scaling_magnitude, self.centroid[2] + self.zoom*self.scaling_magnitude)
+
+        # scale axes
+        self.ax.set_xlim3d(self.centroid[0] - self.zoom*self.axscalefactor, 
+                           self.centroid[0] + self.zoom*self.axscalefactor)
+        self.ax.set_ylim3d(self.centroid[1] - self.zoom*self.axscalefactor,
+                           self.centroid[1] + self.zoom*self.axscalefactor)
+        self.ax.set_zlim3d(self.centroid[2] - self.zoom*self.axscalefactor,
+                           self.centroid[2] + self.zoom*self.axscalefactor)
     
     def on_close(self, event=[]):
-        # save X array in temp folder upon completion
+        """
+        Function called when escape is pressed / plot is closed
+            Upon close, data is saved in the temp folder
+        """
         os.chdir('../temp')
         with open('X.npy', 'wb') as f:
             np.save(f, self.X)
         
     def enter(self):
-
+        """
+        Function called when enter is pressed
+            Upon enter, if any points are selected, vector assignement GUI 
+            is opened and the input data is loaded into the magview viewer
+        """
+        # change directory and run vector assignment GUI
         os.chdir('../textgui')
         os.system('python3 setspin.py') 
         os.chdir('../temp')
+        # if vector was set in the seperate GUI
         if os.path.exists("vector.npy"):
             with open('vector.npy', 'rb') as f:
                 vector = np.load(f)
                 mag = np.load(f)
             os.remove('vector.npy')
+            # normalize and set vector
             if len(vector) != 1:
                 norm = la.norm(vector)
                 if norm != 0:
@@ -167,7 +201,9 @@ class MagView:
                     self.X[np.array(self.clicked),3] = 1
                     self.magscale[np.array(self.clicked)] = np.abs(mag)
         else:
+            # set color back to blue if nothing was done
             self.fc[np.array(self.clicked),:] = self.blue
+        # reset colors and replot
         self.plot._facecolor3d = self.fc
         self.plot._edgecolor3d = self.fc
         self.clicked = []
@@ -175,16 +211,21 @@ class MagView:
         self.plotted = (self.X[:,3] == 1).nonzero()                
 
     def on_key_press(self, event):
+        """
+        Keyboard helper function that sends a keyboard touch to the
+        appropriate action
+        """
+
         if (event.key == "enter") and (len(self.clicked) != 0): # proceed to save and continue to vector assignemnt
             self.enter()
         elif (event.key == "escape"): # end program
             plt.close()
 
         else:
-            if (event.key == "right") and (len(self.plotted) != 0) and (self.scaling_magnitude/self.l) < .26: # grow arrow
+            if (event.key == "right") and (len(self.plotted) != 0) and (self.axscalefactor/self.l) < .26: # grow arrow
                 self.l = 0.9*self.l
                 self.redraw_arrows()
-            elif (event.key == "left") and (len(self.plotted) != 0) and (self.scaling_magnitude/self.l) > .04: # shrink arrow
+            elif (event.key == "left") and (len(self.plotted) != 0) and (self.axscalefactor/self.l) > .04: # shrink arrow
                 self.l = 10*self.l/9
                 self.redraw_arrows()
             elif event.key == "down" and self.s > 3: # shrink size of point
@@ -199,75 +240,94 @@ class MagView:
             elif event.key == "ctrl+=" and self.zoom > 0.5: # zoom into structure
                 self.zoom = 9*self.zoom/10 
                 self.axes_lim()
-            elif event.key == "i":
+            elif event.key == "i": # open instructions
                 os.chdir('../textgui')
                 os.system('python3 instructions.py') 
                 os.chdir('../temp')
-            elif event.key == "t":
+            elif event.key == "t": # toggle non-magnetic atoms
                 if len(self.others) != 0:
                     self.tog = bool(1 - self.tog)
                     if self.tog:
                         self.fixed.remove()
                     else:
-                        self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],s=self.s/3, facecolors="gray", edgecolors="gray")
+                        self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],
+                                                     self.others[:,2],s=self.s/3,
+                                                     facecolors="gray", edgecolors="gray")
                     
         if event.key in {"right","left","t","i","down","up","ctrl+-","ctrl+=","enter"}:
             # update canvas
             self.fig.canvas.draw_idle()
 
     def redraw_arrows(self):
-        #remove and replot arrows
-
-        if len(self.quiver) != 0:
+        """
+        Remove and Replot arrows with updated info
+        """
+        if len(self.quiver) != 0: # check if there are arrows to remove
             for i in range(len(self.quiver)):
                 self.quiver[i].remove()
         self.quiver = []
-        for count, row in enumerate(self.X):
+        for count, row in enumerate(self.X): # plot each arrow individually
             self.quiver += [self.ax.quiver(row[0], row[1], row[2], row[4], row[5], row[6], 
-                                     length=2*self.scaling_magnitude/self.l*self.magscale[count], 
+                                     length=2*self.axscalefactor/self.l*self.magscale[count], 
                                      color="black", pivot="middle", arrow_length_ratio=0.3)]
         
     def redraw_scatter(self):
-        # remove and replot scattered points
-        self.plot.remove()
-        if (len(self.others) != 0) and (self.tog == False):
+        """
+        Remove and Replot dots with updated info
+        """
+        self.plot.remove() # remove magnetic atoms
+        if (len(self.others) != 0) and (self.tog == False): # check if there non-magnetics to remove
             self.fixed.remove()
             self.fixed = self.ax.scatter(self.others[:,0],self.others[:,1],self.others[:,2],
                                s=self.s/3, facecolors="gray", edgecolors="gray")
-
+        # replot magnetics
         self.plot = self.ax.scatter(self.X[:,0],self.X[:,1],self.X[:,2],
                                picker=True, s=self.s, facecolors=self.fc,
                                edgecolors=self.fc)
 
     def on_click(self, event):
-        # clicking the artist changes the color and saves the coords in self.clicked
-
+        """
+        When artist (dot) is clicked, the appropriate action is taken:
+            left click: selected
+            right click: remove 
+        """
+        # indeces in X matrix that were clicked on
         ind = event.ind
-        point = np.array([self.X[ind,0], self.X[ind,1], self.X[ind,2]])
+        #check if any are already assigned (fixed)
         fixed = True if np.sum(self.X[ind,3]) > 0 else False
 
+        
         if str(event.mouseevent.button) == "MouseButton.LEFT" and not fixed:
+            
             for i in ind:
+
+                # add to clicked if not already in it and change color to red
                 if i not in self.clicked:
                     self.clicked += [i]
                     self.fc[i,:] = self.red
+                # otherwise remove it from clicked and change color to blue
                 else:
                     self.clicked.remove(i)
                     self.fc[i,:] = self.blue
+                # update plot colors
                 self.plot._facecolor3d = self.fc
                 self.plot._edgecolor3d = self.fc
             
         elif str(event.mouseevent.button) == "MouseButton.RIGHT" and fixed:
-           
+            
+            #set vector data to zero and update
             self.X[np.array(ind),3:] = np.zeros(4)
             self.redraw_arrows()   
+            #reset colors to blue
             self.fc[np.array(ind),:] = self.blue
+            #remove each from clicked and update colors in plot
             for i in ind:
                 if i in self.clicked:
                      self.clicked.remove(i)
             self.plot._facecolor3d = self.fc
             self.plot._edgecolor3d = self.fc
+            # update plotted
             self.plotted = (self.X[:,3] == 1).nonzero() 
         self.fig.canvas.draw_idle()
 
-mpl.rcParams['toolbar'] = 'None'       # remove matplotlib toolbar
+mpl.rcParams['toolbar'] = 'None'       # remove matplotlib toolbar for further plots

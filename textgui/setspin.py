@@ -5,28 +5,45 @@ import os
 import numpy as np
 
 class window(QtWidgets.QWidget):
-    
+    """
+    Popup window that sets prompts the user to input the 
+        spin, magnitude, and propagation vector
+    """
     def __init__(self):
         super().__init__()
         self.set_ui()
 
     def clicked2(self):
+        #
         with open('vector.npy', 'wb') as f:
             np.save(f, np.array([0]))
         self.close()
 
     def clicked1(self):
         if self.line_edit2.text() != "":
-            self.mag = float(self.line_edit2.text())
+            try:
+                self.mag = float(self.line_edit2.text())
+            except:
+                self.maglabel.setText("<b>Magnitude</b><br>(Optional: will default to unit length)<br><b>Magnitude must be integer or decimal!</b>")
+                return
+        try:
+            text = self.line_edit1.text().replace(" ", "").replace("[", "")
+            text = text.replace("]", "").replace("(", "").replace(")", "").split(",")
+            x = float(text[0])
+            y = float(text[1])
+            z = float(text[2])
+        except:
+            self.label.setText("<b>Spin Vector</b><br>Format: <b>sx,sy,sz</b><br><b>Entry did not match the format.  Try again.</b>")
+            return
         os.chdir('../temp')
-        text = self.line_edit1.text().replace(" ", "").replace("[", "").replace("]", "").replace("(", "").replace(")", "").split(",")
-        x = float(text[0])
-        y = float(text[1])
-        z = float(text[2])
         with open('vector.npy', 'wb') as f:
             np.save(f, np.array([x,y,z]))
             np.save(f, self.mag)
         self.close()
+        
+        print("Enter Vector in the format \"1,2,3\" and magnitude as a int/float")
+
+        
 
     def check_radio(self):
         if self.b3.isChecked():
@@ -89,8 +106,8 @@ class window(QtWidgets.QWidget):
         layout.addWidget(self.proplabel)
         layout.addWidget(self.line_edit3)
         layout.addWidget(self.b1)
-        layout.addWidget(self.b2)
-    
+        layout.addWidget(self.b2)   
+
         self.setLayout(layout)
 
 app = QtWidgets.QApplication(sys.argv)
