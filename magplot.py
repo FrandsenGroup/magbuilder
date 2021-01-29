@@ -1,11 +1,13 @@
 
 # imports
 import os
+import pickle
 from tkinter import filedialog
 import tkinter as tk
 import numpy as np
 from diffpy.structure import loadStructure
 from viewer.magview import MagView
+from diffpy.mpdf.magstructure import MagSpecies, MagStructure 
 
 def run():   
 
@@ -24,19 +26,23 @@ def run():
     except:
         print("Must Select .cif file")
         return 0
-
+    ########### check right file type
     if cif[-4:] != ".cif":
-        raise ValueError("File selected of wrong type")
-
+        raise ValueError("File selected of wrong type. Must select a .cif file")
+    
+    #### load as diffpy.structure object
     struc_ob = loadStructure(cif)
-    struc = struc_ob.xyz.T
+    struc = struc_ob.xyz_cartn.T
     element_inx = struc_ob.element
     
+    #### print structure
     print("\nCif file:")
     print(struc_ob)
     print("")
+    # input 1, 2, or exit 
     option = input("Enter \n1: to select magnetic atoms individually, \n2: to select by element type\n\n").replace(" ","")
     while 1:  
+        # control for other inputs
         if "exit" in option:
             print("Program Aborted")
             return 0
@@ -45,16 +51,21 @@ def run():
         option = input("Invalid Input.  \nValid inputs are 'exit', '1', or '2'\n\n").replace(" ","")
 
     print("")
+    nonmag = []
 
-    if option == "2":
+    if option == "2": 
+        # select magnetic atoms by element type
+        
+        # display elements and indeces
         elems = list(set(struc_ob.element))
         elems.sort()
         inx = np.arange(1,1+len(elems))
         dmap = dict(zip(elems, inx))
-    
         for i in range(len(elems)):
             print(str(i + 1) + '\t' + elems[i])
         mags = input("\nEnter the index of each magnetic element (delimited by commas)\n").replace(" ","").split(",")
+
+        # control for other inputs
         while 1:
             if "exit" in mags:
                 print("Program Aborted")
@@ -65,16 +76,17 @@ def run():
         
         ####--- Build matrix and load viewer ---#####
     
-        others = []
         X = []
-        Z = np.zeros((len(struc[0]), 7))
-        Z[:,0], Z[:,1], Z[:,2] = struc[0], struc[1], struc[2] 
-    
+        Z = np.array([struc[0], struc[1], struc[2]]).T
+        originx = []
+        
+        # separate 
         for i in range(len(Z)):
             if str(dmap[element_inx[i]]) in mags:
                 X += [Z[i,:]]
+                originx += [i]
             else:
-                others += [Z[i,:]]
+                nonmag += [Z[i,:]]
     elif option == "1":
         struc_str = str(struc_ob).split("\n")
         for i in np.arange(1,len(struc.T)+1):
@@ -90,19 +102,39 @@ def run():
             mags = input("Invalid Input.  \nValid inputs are 'exit', or the integer range between '1'" + ", and '" +str(len(struc.T))+"'\n")
             mags = mags.replace(" ","").split(",")
     
-        others = []
         X = []
-        Z = np.zeros((len(struc[0]), 7))
-        Z[:,0], Z[:,1], Z[:,2] = struc[0], struc[1], struc[2] 
-    
+        Z = np.array([struc[0], struc[1], struc[2]]).T
+        originx = []
+
         for i in range(len(Z)):
             if str(i) in mags:
                 X += [Z[i,:]]
+                originx += [i]
             else:
-                others += [Z[i,:]]
-    if len(others) != 0:
-        return MagView(np.array(X), cif, 4, 50, np.array(others)[:,:3])
+                nonmag += [Z[i,:]]
+    if len(nonmag) != 0:
+        MagView(np.array(X), cif, els = struc_ob.element, nonmag = np.array(nonmag)[:,:3], basis=struc_ob.lattice.stdbase)
     else:
-        return MagView(np.array(X), cif, 4, 50)
-
+        MagView(np.array(X), cif, els = struc_ob.element, basis = struc_ob.lattice.stdbase)
+    
+    with open('X.npy', 'rb') as f:
+        X = np.load(f)
+    os.remove('X.npy')
+    
+    X = np.concatenate([X, np.array(originx).reshape(len(originx),1)], axis=1)
+    print(X)
+    magspecs = []
+    labels = []
+    for i in np.unique(X[:,8]):
+        if i != 0:
+            spec = X[X[:,8]==i,: ]
+            labels += [str(i)]
+            inxs = list(set(spec[:,-1]))
+            magspecs += [MagSpecies(struc=struc_ob, label=str(i), magIdxs=inxs, basisvecs=spec[0,4:7].reshape(1,3), kvecs= spec[0,9:12].reshape(1,3))]
+    mag = MagStructure(struc=struc_ob, species=dict(zip(labels, magspecs)))
+    
+    with open('mag_output.pkl', 'wb') as f:
+        pickle.dump(mag, f,pickle.HIGHEST_PROTOCOL)
+    
+    
 run()

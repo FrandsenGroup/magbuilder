@@ -1,4 +1,51 @@
-axes limits for structure in [0,1] ? assumption will simplify code
-will axis ticks be useful?
+Qs
+
+prop vectors for individual atom groups? (set of prop vectors)
+a,b,c coords?
+
+more error handling
+possible popup for mag selection
+
+cartesian from lattice
+ipython - not working
+
+lat = struc.lattice
+lat.cartesian(np.array([ [0,0,0], [0.5, 0.5, 0.5], [0.75, 0.25, 0]]))
+
+lat.basis (3,3) rows
 
 
+
+----------
+ 
+magspecies
+struc - load structure obj
+input option for label - or create a unique int
+mag Idxs - mag indeces of THIS species in unit cell
+atoms / spins - no need
+basisvecs - spin array (3,)
+kvecs - prop vector (k,3)
+
+magstructure
+
+does it work?
+save magnitudes or scale vectore?
+
+
+Updates:
+
+Exported into MagStructure
+fullscreen enabled
+default matplotlib hotkeys are disabled
+regex verifies spin settings inputs
+
+TODO:
+
+finish exporting multidimentional prop_vecs
+toggle unique element colors / new legend
+close instructions if not active window
+fractions
+jupyter notebook / ipython
+
+with open('mag_output.pkl', 'rb') as f:
+        mag = pickle.load(f)
