@@ -16,10 +16,11 @@ Standard modules imported:
 - os
 - sys
 - tkinter
+- pickle
 
 Instructions to run:
 -
-1. Place .cif file in \_cif folder _(this is the default folder opened to load a .cif file)_
+1. Place .cif file in \_cif folder _(this is the default folder opened to load a .cif file - Files from elsewhere can be loaded once navigated to)_
 2. Run magplot.py in conda environment with diffpy installed
 
 Instructions to use:
