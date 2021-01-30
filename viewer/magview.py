@@ -2,8 +2,6 @@ import numpy as np
 import matplotlib as mpl
 from matplotlib import pyplot as plt 
 from mpl_toolkits.mplot3d import Axes3D
-from PyQt5.QtGui import QIcon
-from time import sleep
 import os
 import numpy.linalg as la
 

@@ -31,7 +31,7 @@ class window(QtWidgets.QWidget):
         ### check magnitude 
         if self.line_mag.text() != "":
             try:
-                mag = float(self.line_mag.text())
+                mag = float(eval(self.line_mag.text()))
 
             except:
                 self.maglabel.setText("<b>Magnitude</b><br>(Optional: will default to unit length)<br><b>Magnitude must be integer or decimal!</b>")
@@ -46,9 +46,9 @@ class window(QtWidgets.QWidget):
 
         if (self.single_prop.search(text)) or (self.single_prop.search(text[1:-1]) and text[0]=="(" and text[-1]==")"):
             text = text.replace("(","").replace(")","").split(",")
-            x = float(text[0])
-            y = float(text[1])
-            z = float(text[2])
+            x = float(eval(text[0]))
+            y = float(eval(text[1]))
+            z = float(eval(text[2]))
 
         else:
 
@@ -70,15 +70,17 @@ class window(QtWidgets.QWidget):
             d = prop.split("),(")
             prop_vec = []
             for i in range(len(d)):
-                prop_vec += [np.array(d[i].replace("(", "").replace(")", "").split(",")).astype(float)]
+                l = d[i].replace("(", "").replace(")", "").split(",")
+                l = [float(eval(l[0])), float(eval(l[1])), float(eval(l[2]))]
+                prop_vec += [np.array(l)]
             prop_vec = np.array(prop_vec) 
 
         elif (self.single_prop.search(prop)) or (self.single_prop.search(prop[1:-1]) and prop[0]=="(" and prop[-1]==")"):
 
             prop = prop.replace("(","").replace(")","").split(",")
-            p1 = float(prop[0])
-            p2 = float(prop[1])
-            p3 = float(prop[2])
+            p1 = float(eval(prop[0]))
+            p2 = float(eval(prop[1]))
+            p3 = float(eval(prop[2]))
             prop_vec = np.array([[p1,p2,p3]])
 
         else:
@@ -107,8 +109,8 @@ class window(QtWidgets.QWidget):
 
     def set_ui(self):
 
-        self.multiple_props = re.compile(r"^(\({1}((\d+\.{1}\d+|\d+|.\d+),){2}(\d+\.{1}\d+|\d+|.\d+)\){1},)*(\({1}((\d+\.{1}\d+|\d+|.\d+),){2}(\d+\.{1}\d+|\d+|.\d+)\){1})$")
-        self.single_prop = re.compile(r"^((\d+\.{1}\d+|\d+|.\d+),){2}(\d+\.{1}\d+|\d+|.\d+)$")
+        self.multiple_props = re.compile(r"^(\({1}((\d+\.{1}\d+|\d+\/{1}\d+|\d+|.\d+),){2}(\d+\.{1}\d+|\d+\/{1}\d+|\d+|.\d+)\){1},)*(\({1}((\d+\.{1}\d+|\d+\/{1}\d+|\d+|.\d+),){2}(\d+\.{1}\d+|\d+\/{1}\d+|\d+|.\d+)\){1})$")
+        self.single_prop = re.compile(r"^((\d+\.{1}\d+|\d+\/{1}\d+|\d+|.\d+),){2}(\d+\.{1}\d+|\d+\/{1}\d+|\d+|.\d+)$")
         
         self.mag = 1
         icon = QIcon('iconset.png')

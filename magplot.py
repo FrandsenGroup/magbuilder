@@ -122,7 +122,7 @@ def run():
     os.remove('X.npy')
     
     X = np.concatenate([X, np.array(originx).reshape(len(originx),1)], axis=1)
-    print(X)
+    
     magspecs = []
     labels = []
     for i in np.unique(X[:,8]):
