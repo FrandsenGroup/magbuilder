@@ -19,17 +19,17 @@ class MagView:
             cartesian coordinates
     """
 
-    def __init__(self, X, cif, els=None, nonmag=[], basis=np.eye(3)):
+    def __init__(self, X, cif="", nonmag=[], basis=np.eye(3)):
         """
         Attributes:
         
-            self.X         : (ndarray, (n,7)) copy of the X array imput into the class
+            self.X         : (ndarray, (n,9)) copy of the X array imput into the class
                               cols :3 are x,y,z coords
                               cols 3 is 1 if changed or 0 if nothing has been done
                               cols 4:7 is vector cords (default (0,0,0)
                               cols 7 is the magnitude (default 1)
-                              cols 8 is the index / label (int) (default 0)
-                              cols 9: is the prop vector (default (0,0,0)
+                              cols 8 is the unique index / label (int)
+                              
             self.nonmag    : (ndarray, (m,3)) copy of input other array
             self.l         : (int) length scale of arrows
             self.s         : (int) size scale of atoms
@@ -55,20 +55,29 @@ class MagView:
             self.zoom      : (float) zoom in / out factor
             self.showgrid  : (bool) is the grid displayed
             self.showticks : (bool) are the ticks displayed
-
+            self.full      : (bool) is command to fullscreen in effect
         """
-        
-        d = dict([(y,x) for x,y in enumerate(sorted(set(els)))])
-        self.element_nums = np.array([d[x] for x in els]).astype(int)
-        self.index = 1
-        self.basis = basis
+        if X is None:
+            raise ValueError("Must an assign X matrix")
+        if cif is None:
+            cif =""
+        if nonmag is None:
+            nonmag = []
+        if basis is None:
+            basis = np.eye(3)
+        # undo to work on color swap
+        #d = dict([(y,x) for x,y in enumerate(sorted(set(els)))])
+        #self.element_nums = np.array([d[x] for x in els]).astype(int)
+        self.basis = np.array(basis)
         self.nonmag = nonmag
         self.clicked = []                      # to contain points receiving a vector
         self.l = 4                            # default length of arrows
         self.s = 50                             # default size of point
-        self.X = np.zeros((len(X[:,0]), 11))
+        self.X = np.zeros((len(X[:,0]), 9))
         self.X[: ,:3] = X   # X matrix containing coordinates and vectors
         self.X[:,7] = 1   # 7 is magnitudes
+        self.n = len(self.X[:,8])
+        self.X[:,8] = np.arange(self.n)
         self.fig = plt.figure(figsize=(8.,6.)) # set and save figure object
         self.window = self.fig.canvas.manager.window
         self.ax = self.fig.add_subplot(111, projection='3d') # make 3d
@@ -77,19 +86,16 @@ class MagView:
         self.showgrid = True
         self.showticks = True
         self.isfull = False
+        self.props = dict(zip(list(range(self.n)),[np.array([[0,0,0]]) for i in range(self.n)]))
 
-        #image = QIcon(os.getcwd() + 'iconset.png')
-        #self.window.setWindowIcon(image)
-        #self.window.setWindowIconText("MagPlot")
-        
         #scatter the structure data
         if len(self.X) == 0: # check if there are any coordinates
             raise ValueError("no selected indeces")
         
         # plot all X values
         self.plot = self.ax.scatter(self.X[:,0],self.X[:,1],self.X[:,2],
-                               picker=True, s=self.s, facecolors=["C0"]*len(self.X[:,0]),
-                               edgecolors=["C0"]*len(self.X[:,0]))
+                               picker=True, s=self.s, facecolors=["C0"]*self.n,
+                               edgecolors=["C0"]*self.n)
         
         # plot all non-magnetic coordinates if any
         if len(self.nonmag) != 0:
@@ -170,14 +176,32 @@ class MagView:
         self.ax.set_ylabel("Y", fontweight='bold')
         self.ax.set_zlabel("Z", fontweight='bold')
             
-        # center and scale all axes equally
-        if len(self.nonmag) != 0:
-            self.centroid = (np.sum(self.X[:,:3], axis=0) + np.sum(self.nonmag, axis=0)) / (len(self.X) + len(self.nonmag))
-        else: 
-            self.centroid = np.sum(self.X[:,:3], axis=0) / len(self.X)
+        #### build bounding box
+ 
+        box = np.array([[0,0,0],
+                        [0,0,1],
+                        [0,1,1],
+                        [1,1,1],
+                        [1,1,0],
+                        [0,1,0],
+                        [1,1,0],
+                        [1,0,0],
+                        [0,0,0],
+                        [0,1,0],
+                        [0,1,1],
+                        [1,1,1],
+                        [1,0,1],
+                        [1,0,0],
+                        [1,0,1],
+                        [0,0,1]])
 
+        self.bbox = box @ self.basis
+        self.showbox = False
         # get coordinate furthest from centroid and scale axes accordingly, centering the plot
-        self.axscalefactor = np.max(np.abs(self.X[:,:3] - self.centroid))
+        self.centroid = np.mean(self.X[:,:3],axis=0)
+        if len(self.nonmag) != 0:
+            self.centroid = np.mean(np.concatenate([self.X[:,:3], self.nonmag], axis=0), axis=0)
+        self.axscalefactor = np.max(np.abs(self.bbox - self.centroid))
         self.zoom = 1.1
         self.ax.grid(b=self.showgrid)
         self.axes_lim()
@@ -196,10 +220,10 @@ class MagView:
         Function called when escape is pressed / plot is closed
             Upon close, data is saved in the temp folder
         """
-
         os.chdir('../temp')
         with open('X.npy', 'wb') as f:
-            np.save(f, self.X)
+            np.save(f, self.X,allow_pickle=True)
+            np.save(f, [self.props],allow_pickle=True)
 
     def enter(self):
         """
@@ -214,10 +238,10 @@ class MagView:
         # if vector was set in the seperate GUI
         if os.path.exists("vector.npy"):
             with open('vector.npy', 'rb') as f:
-                vector = np.load(f)
-                mag = np.load(f)
-                usecrys = np.load(f)
-                prop = np.load(f)
+                vector = np.load(f,allow_pickle=True)
+                mag = np.load(f,allow_pickle=True)
+                usecrys = np.load(f,allow_pickle=True)
+                prop = np.load(f,allow_pickle=True)
             os.remove('vector.npy')
             # normalize and set vector
             if vector.size != 1:
@@ -230,10 +254,8 @@ class MagView:
                     self.X[np.array(self.clicked),4:7] = vector / norm * np.sign(mag)
                     self.X[np.array(self.clicked),3] = 1
                     self.X[np.array(self.clicked),7] = np.abs(mag)
-                    self.X[np.array(self.clicked),8] = self.index
-                    self.X[np.array(self.clicked),8:] = prop[0]
-                    
-                    self.index += 1
+                    for i in self.X[np.array(self.clicked),8]:
+                        self.props[i] = prop
                 else:
                     self.fc[np.array(self.clicked),:] = self.blue
         else:
@@ -266,7 +288,7 @@ class MagView:
             if (event.key == "f"):
                 self.window.showMaximized() if not self.isfull else self.window.showNormal()
                 self.isfull = bool(1 - self.isfull) 
-            elif (event.key == "right") and (len(self.plotted) != 0) and (self.axscalefactor/self.l < self.arrowscale*3): # grow arrow
+            if (event.key == "right") and (len(self.plotted) != 0) and (self.axscalefactor/self.l < self.arrowscale*3): # grow arrow
                 self.l = 0.9*self.l
                 self.redraw_arrows()
             elif (event.key == "left") and (len(self.plotted) != 0) and (self.axscalefactor/self.l) > self.arrowscale/3: # shrink arrow
@@ -306,19 +328,25 @@ class MagView:
                     self.ax.set_yticks([])
                     self.ax.set_zticks([])
                 self.axes_lim()
+            elif event.key == "b":
+                self.showbox = bool(1-self.showbox)
+                if self.showbox:
+                    self.bboxplot = self.ax.plot( self.bbox[:,0], self.bbox[:,1], self.bbox[:,2], color="gray", linestyle="--")
+                else: 
+                    lines = self.bboxplot.pop(0)
+                    lines.remove()
 
-            elif event.key == "t": # toggle non-magnetic atoms
-                if len(self.nonmag) != 0:
-                    self.tog = bool(1 - self.tog)
-                    if self.tog:
-                        self.fixed.remove()
-                    else:
-                        self.fixed = self.ax.scatter(self.nonmag[:,0],self.nonmag[:,1],
+            elif (event.key == "t") and (len(self.nonmag) != 0): # toggle non-magnetic atoms
+                self.tog = bool(1 - self.tog)
+                if self.tog:
+                    self.fixed.remove()
+                else:
+                    self.fixed = self.ax.scatter(self.nonmag[:,0],self.nonmag[:,1],
                                                      self.nonmag[:,2],s=self.s/3,
                                                      facecolors="gray", edgecolors="gray")
                     
-        if event.key in {"right","f","left","n","g","t",
-                         "i","down","up","ctrl+-","ctrl+=","enter"}:
+        if event.key in {"right","b","f","left","n","g","t",
+                         "down","up","ctrl+-","ctrl+=","enter"}:
             # update canvas
             self.fig.canvas.draw_idle()
 
@@ -381,8 +409,6 @@ class MagView:
             
             #set vector data to zero and update
             self.X[np.array(ind),3:7] = np.zeros(4)
-            self.X[np.array(ind),7] = 1
-            self.X[np.array(ind),8] = 0
             self.redraw_arrows()   
             #reset colors to blue
             self.fc[np.array(ind),:] = self.blue
@@ -394,6 +420,7 @@ class MagView:
             self.plot._edgecolor3d = self.fc
             # update plotted
             self.plotted = (self.X[:,3] == 1).nonzero() 
+        print(self.X)
         self.fig.canvas.draw_idle()
 
 mpl.rcParams['toolbar'] = 'None'       # remove matplotlib toolbar for further plots

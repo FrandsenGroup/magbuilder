@@ -64,7 +64,7 @@ class window(QtWidgets.QWidget):
         prop = self.line_prop.text().replace("]", ")").replace("[", "(").replace("{", "(").replace("}", ")").replace(" ", "").replace("\t", "").replace("\n", "")
 
         if prop == "":
-            prop_vec = np.array([[0,0,0]])
+            prop_vec = [[0,0,0]]
 
         elif self.multiple_props.search(prop):
             d = prop.split("),(")
@@ -72,8 +72,7 @@ class window(QtWidgets.QWidget):
             for i in range(len(d)):
                 l = d[i].replace("(", "").replace(")", "").split(",")
                 l = [float(eval(l[0])), float(eval(l[1])), float(eval(l[2]))]
-                prop_vec += [np.array(l)]
-            prop_vec = np.array(prop_vec) 
+                prop_vec += [l]
 
         elif (self.single_prop.search(prop)) or (self.single_prop.search(prop[1:-1]) and prop[0]=="(" and prop[-1]==")"):
 
@@ -81,7 +80,7 @@ class window(QtWidgets.QWidget):
             p1 = float(eval(prop[0]))
             p2 = float(eval(prop[1]))
             p3 = float(eval(prop[2]))
-            prop_vec = np.array([[p1,p2,p3]])
+            prop_vec = [[p1,p2,p3]]
 
         else:
 
