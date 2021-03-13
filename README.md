@@ -20,8 +20,8 @@ Standard modules imported:
 
 Instructions to run:
 -
-1. Place .cif file in \_cif folder _(this is the default folder opened to load a .cif file - Files from elsewhere can be loaded once navigated to)_
-2. Run magplot.py in conda environment with diffpy installed
+1. Place structure file (.cif file) in \_cif folder _(this is the default folder opened to load a .cif file - Files from elsewhere can be loaded once navigated to)_
+2. Run start.py in conda environment with diffpy installed
 
 Instructions to use:
 - 
@@ -29,5 +29,10 @@ Instructions to use:
 2. Decide which atoms can be selected, either individually or by atom type
 3. In the viewer, assign the atoms with spins (press i in viewer to see controls)
 4. In in popup, one can assign a spin to all the atoms selected and optionally include a non-unit magnitude or non-zero propagation vector
-5. Upon closing the viewer by pressing close or escape, the spins, magnitudes, and propagation vectors are saved in the temp folder
+5. Upon closing the viewer by pressing close or escape, the spins, magnitudes, and propagation vectors are saved as a MagStructure Object (diffpy.magpdf) as mag_output.pkl
+6. Read object into existing code with 
+
+ <pre>with open('/path/to/mag_output.pkl', 'rb') as f:<br>
+    mag = pickle.load(f)</pre>
+
 
