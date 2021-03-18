@@ -19,7 +19,7 @@ class MagView:
             cartesian coordinates
     """
 
-    def __init__(self, X, cif="", nonmag=[], basis=np.eye(3)):
+    def __init__(self, X, elems, revdmap, nonmag=None, cif="", basis=np.eye(3)):
         """
         Attributes:
         
@@ -29,7 +29,7 @@ class MagView:
                               cols 4:7 is vector cords (default (0,0,0)
                               cols 7 is the magnitude (default 1)
                               cols 8 is the unique index / label (int)
-                              
+            self.mag	   : (ndarray, n)                  
             self.nonmag    : (ndarray, (m,3)) copy of input other array
             self.l         : (int) length scale of arrows
             self.s         : (int) size scale of atoms
@@ -73,6 +73,8 @@ class MagView:
         self.clicked = []                      # to contain points receiving a vector
         self.l = 4                            # default length of arrows
         self.s = 50                             # default size of point
+        self.revdmap = revdmap
+        self.elems = elems
         self.X = np.zeros((len(X[:,0]), 9))
         self.X[: ,:3] = X   # X matrix containing coordinates and vectors
         self.X[:,7] = 1   # 7 is magnitudes
@@ -315,6 +317,7 @@ class MagView:
             elif event.key == "g":
                 self.showgrid = bool(1 - self.showgrid)
                 self.ax.grid(b=self.showgrid)
+
             elif event.key == "n":
                 self.showticks = bool(1 - self.showticks)
                 if self.showticks:
@@ -344,8 +347,10 @@ class MagView:
                     self.fixed = self.ax.scatter(self.nonmag[:,0],self.nonmag[:,1],
                                                      self.nonmag[:,2],s=self.s/3,
                                                      facecolors="gray", edgecolors="gray")
+            elif (event.key == "c"):
+                print()
                     
-        if event.key in {"right","b","f","left","n","g","t",
+        if event.key in {"right","b","f","c","left","n","g","t",
                          "down","up","ctrl+-","ctrl+=","enter"}:
             # update canvas
             self.fig.canvas.draw_idle()

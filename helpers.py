@@ -67,17 +67,18 @@ def control_row_selection(num_el, struc_str):
         mags = mags.replace(" ","").split(",")
     return mags
 
-def split_up_magnetics(cond, mags, struc):
+def split_up_magnetics(cond, mags, struc, row_element):
 
-    X, orig_inx, nonmag = [], [], []
+    X, orig_inx, nonmag, Xelem = [], [], [], []
 
     for i in range(len(struc)):
         if str(cond[i]) in mags:
             X += [struc[i,:]]
             orig_inx += [i]
+            Xelem += [row_element[i]]
         else:
             nonmag += [struc[i,:]]
-    return np.array(X), np.array(orig_inx), np.array(nonmag)
+    return np.array(X), np.array(orig_inx), np.array(nonmag), np.array(Xelem)
 
 
 

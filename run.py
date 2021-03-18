@@ -24,6 +24,7 @@ def run():
     elems.sort() 				# alphabetical list of elements
     element_inx = np.arange(1,1+len(elems)) 		# 1 to n+1 indeces for each element
     dmap = dict(zip(elems, element_inx)) 		# element name to associated number
+    revdmap = dict(zip(element_inx, elems))
     row_element = np.array([dmap[i] for i in struc_ob.element])
     struc_str = str(struc_ob).split("\n") 	# print string
     num_el = len(struc)
@@ -40,15 +41,15 @@ def run():
 
     if option == "2": 
         mags = help.control_element_selection(elems, element_inx)
-        X, orig_inx, nonmag, Xelem = help.split_up_magnetics(row_element, mags, struc)
+        X, orig_inx, nonmag, Xelem = help.split_up_magnetics(row_element, mags, struc, row_element)
     elif option == "1":
         mags = help.control_row_selection(num_el, struc_str)
-        X, orig_inx, nonmag, Xelem = help.split_up_magnetics(np.arange(1,1+len(struc)), mags, struc)
-
+        X, orig_inx, nonmag, Xelem = help.split_up_magnetics(np.arange(1,1+len(struc)), mags, struc, row_element)
+    print(nonmag)
     if len(nonmag) != 0:
-        MagView(X, cif_name, nonmag = nonmag, basis=struc_ob.lattice.stdbase)
+        MagView(X, Xelem, revdmap, nonmag = nonmag, cif=cif_name,  basis=struc_ob.lattice.stdbase)
     else:
-        MagView(X, cif_name, basis = struc_ob.lattice.stdbase)
+        MagView(X, Xelem, revdmap, cif=cif_name, basis = struc_ob.lattice.stdbase)
     
     with open('X.npy', 'rb') as f:
         X = np.load(f,allow_pickle=True)
