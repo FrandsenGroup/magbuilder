@@ -21,7 +21,7 @@ Standard modules imported:
 Instructions to run:
 -
 1. Place structure file (.cif file) in \_cif folder _(this is the default folder opened to load a .cif file - Files from elsewhere can be loaded once navigated to)_
-2. Run start.py in conda environment with diffpy installed
+2. Run run.py in conda environment with diffpy installed
 
 Instructions to use:
 - 
