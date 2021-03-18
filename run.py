@@ -45,7 +45,6 @@ def run():
     elif option == "1":
         mags = help.control_row_selection(num_el, struc_str)
         X, orig_inx, nonmag, Xelem = help.split_up_magnetics(np.arange(1,1+len(struc)), mags, struc, row_element)
-    print(nonmag)
     if len(nonmag) != 0:
         MagView(X, Xelem, revdmap, nonmag = nonmag, cif=cif_name,  basis=struc_ob.lattice.stdbase)
     else:
@@ -54,7 +53,7 @@ def run():
     with open('X.npy', 'rb') as f:
         X = np.load(f,allow_pickle=True)
         props = np.load(f,allow_pickle=True)[0]
-
+    os.remove('X.npy')
     magspecs = []
     labels = []
     for i in range(len(X)):

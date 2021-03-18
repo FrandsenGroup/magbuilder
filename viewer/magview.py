@@ -347,8 +347,6 @@ class MagView:
                     self.fixed = self.ax.scatter(self.nonmag[:,0],self.nonmag[:,1],
                                                      self.nonmag[:,2],s=self.s/3,
                                                      facecolors="gray", edgecolors="gray")
-            elif (event.key == "c"):
-                print()
                     
         if event.key in {"right","b","f","c","left","n","g","t",
                          "down","up","ctrl+-","ctrl+=","enter"}:
@@ -425,7 +423,6 @@ class MagView:
             self.plot._edgecolor3d = self.fc
             # update plotted
             self.plotted = (self.X[:,3] == 1).nonzero() 
-        print(self.X)
         self.fig.canvas.draw_idle()
 
 mpl.rcParams['toolbar'] = 'None'       # remove matplotlib toolbar for further plots
