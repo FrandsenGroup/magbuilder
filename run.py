@@ -11,7 +11,13 @@ import helpers as help
 def run():   
 
     nonmag = []
-
+    os.chdir("./_cif")
+    try:
+        os.remove('data.npy')
+    except:
+        already_deleted = True
+    os.chdir("..")
+    
     ####--- Read structure --####
     filepath = help.get_file()
     cif_name = help.check_cif(filepath)
@@ -38,22 +44,43 @@ def run():
                                 + "\n2: to select by element type\n\n").replace(" ","")
     option = help.control_selection_technique(prelim_input)
     print("")
-
+    # either select by element type, or by individual index
     if option == "2": 
         mags = help.control_element_selection(elems, element_inx)
         X, orig_inx, nonmag, Xelem = help.split_up_magnetics(row_element, mags, struc, row_element)
     elif option == "1":
         mags = help.control_row_selection(num_el, struc_str)
         X, orig_inx, nonmag, Xelem = help.split_up_magnetics(np.arange(1,1+len(struc)), mags, struc, row_element)
+    # save data and build viewer object
     if len(nonmag) != 0:
+        with open('data.npy', 'wb') as f:
+            np.save(f, X)
+            np.save(f, Xelem)
+            np.save(f, revdmap)
+            np.save(f, nonmag)
+            np.save(f, cif_name)
+            np.save(f, struc_ob.lattice.stdbase)
+
         MagView(X, Xelem, revdmap, nonmag = nonmag, cif=cif_name,  basis=struc_ob.lattice.stdbase)
     else:
+        with open('data.npy', 'wb') as f:
+            np.save(f, X)
+            np.save(f, Xelem)
+            np.save(f, revdmap)
+            np.save(f, nonmag)
+            np.save(f, cif_name)
+            np.save(f, struc_ob.lattice.stdbase)
         MagView(X, Xelem, revdmap, cif=cif_name, basis = struc_ob.lattice.stdbase)
-    
+
+    #build Magstructure objcet with info collected in the viewer    
+
     with open('X.npy', 'rb') as f:
         X = np.load(f,allow_pickle=True)
         props = np.load(f,allow_pickle=True)[0]
     os.remove('X.npy')
+    os.chdir("../_cif")
+    os.remove('data.npy')
+    os.chdir("../temp")
     magspecs = []
     labels = []
     for i in range(len(X)):
@@ -64,8 +91,9 @@ def run():
 
     mag = MagStructure(struc=struc_ob, species=dict(zip(labels, magspecs)))
     
-    with open('mag_output.pkl', 'wb') as f:
+    # save obj to pkl file in temp
+    title = input("Enter alpha-numeric filename: ")
+    with open(title + '.pkl', 'wb') as f:
         pickle.dump(mag, f,pickle.HIGHEST_PROTOCOL)
-    
-    
+    print("File saved as " + title + ".pkl in temp folder" )    
 run()

@@ -65,9 +65,6 @@ class MagView:
             nonmag = []
         if basis is None:
             basis = np.eye(3)
-        # undo to work on color swap
-        #d = dict([(y,x) for x,y in enumerate(sorted(set(els)))])
-        #self.element_nums = np.array([d[x] for x in els]).astype(int)
         self.basis = np.array(basis)
         self.nonmag = nonmag
         self.clicked = []                      # to contain points receiving a vector
@@ -123,7 +120,7 @@ class MagView:
         """
         dotsize = 8  # size of dot in legend
         
-       # build legend and include non-magnetic atoms if any
+        # build legend and include non-magnetic atoms if any
         legend_elements = [mpl.lines.Line2D([0], [0], 
                            lw=0,marker='o', color=self.blue, 
                            label='Can be Assigned', 
