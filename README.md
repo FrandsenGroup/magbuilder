@@ -1,6 +1,6 @@
-MagPlotSpin:
+MagViewer:
 -
-A GUI Interface to assign magnetic spins to molecular structures.
+A GUI Interface to assign magnetic spins to molecular structures. Developed by Caleb Dame (@calebdame) while working with Ben Frandsen at Brigham Young University.
 
 To be integrated into diffpy.magpdf (@benfrandsen) to facilitate spin assignment when implementing the program
 
