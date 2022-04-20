@@ -32,7 +32,8 @@ Instructions to use:
 5. Upon closing the viewer by pressing close or escape, the spins, magnitudes, and propagation vectors are saved as a MagStructure Object (diffpy.magpdf) as mag_output.pkl
 6. Read object into existing code with 
 
- <pre>with open('/path/to/mag_output.pkl', 'rb') as f:<br>
-    mag = pickle.load(f)</pre>
+ <pre>with open('/path/to/mag_output.pkl', 'rb') as f:
+    mag = pickle.load(f)
+    f.close()</pre>
 
 
