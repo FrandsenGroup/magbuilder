@@ -68,9 +68,7 @@ def control_row_selection(num_el, struc_str):
     return mags
 
 def split_up_magnetics(cond, mags, struc, row_element):
-
     X, orig_inx, nonmag, Xelem = [], [], [], []
-
     for i in range(len(struc)):
         if str(cond[i]) in mags:
             X += [struc[i,:]]

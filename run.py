@@ -3,9 +3,9 @@
 import os
 import pickle
 import numpy as np
+from diffpy.mpdf import *
 from diffpy.structure import loadStructure
 from viewer.magview import MagView
-from diffpy.mpdf.magstructure import MagSpecies, MagStructure 
 import helpers as help
 
 def run():   
@@ -87,7 +87,7 @@ def run():
         if X[i,3] == 1:
             labels += [str(i)]
             inxs = [orig_inx[i]]
-            magspecs += [MagSpecies(struc=struc_ob, label=str(i), magIdxs=inxs, basisvecs=X[i,4:7], kvecs=props[i])]
+            magspecs += [MagSpecies(struc=struc_ob, label=str(i), strucIdxs=inxs, basisvecs=X[i,4:7], kvecs=props[i])]
 
     mag = MagStructure(struc=struc_ob, species=dict(zip(labels, magspecs)))
     

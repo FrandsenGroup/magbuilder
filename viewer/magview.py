@@ -161,7 +161,7 @@ class MagView:
         self.blue = np.array([0.12156863, 0.4666667, 0.70588235, 1.])
         self.red = np.array([1,0,0,1])
         self.fc = self.plot.get_facecolors()
-
+        
         # graph cosmetics
         title = "\n\n"+str(cif)
         self.fig.canvas.set_window_title("MagPlotSpin")
