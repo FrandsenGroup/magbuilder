@@ -8,7 +8,7 @@ Necessary libraries (not included as a standard module):
 -
 - diffpy/Structure
 - numpy
-- matplotlib
+- matplotlib version 3.1.2
 - PyQT5
 
 Standard modules imported:
