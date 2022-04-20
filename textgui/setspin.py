@@ -11,7 +11,7 @@ import re
 
 class window(QtWidgets.QWidget):
     """
-    Popup window that sets prompts the user to input the 
+    Popup window that prompts the user to input the 
         spin, magnitude, and propagation vector
     """
     def __init__(self):
@@ -28,64 +28,62 @@ class window(QtWidgets.QWidget):
 
         self.reset_labels()
 
-        ### check magnitude 
-        if self.line_mag.text() != "":
-            try:
-                mag = float(eval(self.line_mag.text()))
-
-            except:
-                self.maglabel.setText("<b>Magnitude</b><br>(Optional: will default to unit length)<br><b>Magnitude must be integer or decimal!</b>")
-                return
-
-        else:
-
-            mag = 1
-
         ### try to read vector and correct format
         text = self.line_vec.text().replace("]", ")").replace("[", "(").replace("{", "(").replace("}", ")").replace(" ", "").replace("\t", "").replace("\n", "")
 
-        if (self.single_prop.search(text)) or (self.single_prop.search(text[1:-1]) and text[0]=="(" and text[-1]==")"):
+        try:
             text = text.replace("(","").replace(")","").split(",")
-            x = float(eval(text[0]))
-            y = float(eval(text[1]))
-            z = float(eval(text[2]))
+            [x, y, z] = list(map(float, text))
 
-        else:
+        except ValueError:
 
             if self.b3.isChecked():
-                self.veclabel.setText("<b>Spin Vector</b><br>Format: <b>a,b,c</b><br><b>Entry did not match the format.  Try again.</b>")
+                self.veclabel.setText("<b>Magnetic Moment Vector</b><br>Format: <b>a,b,c</b><br><b>Entry did not match the format.  Try again.</b>")
 
             else:
-                self.veclabel.setText("<b>Spin Vector</b><br>Format: <b>sx,sy,sz</b><br><b>Entry did not match the format.  Try again.</b>")
+                self.veclabel.setText("<b>Magnetic Moment Vector</b><br>Format: <b>sx,sy,sz</b><br><b>Entry did not match the format.  Try again.</b>")
             return
 
         ### 
         
         prop = self.line_prop.text().replace("]", ")").replace("[", "(").replace("{", "(").replace("}", ")").replace(" ", "").replace("\t", "").replace("\n", "")
-
         if prop == "":
             prop_vec = [[0,0,0]]
 
-        elif self.multiple_props.search(prop):
-            d = prop.split("),(")
+        elif "),(" in prop:
+            prop = prop.replace("),(",");(")
+            d = prop.split(";")
             prop_vec = []
-            for i in range(len(d)):
-                l = d[i].replace("(", "").replace(")", "").split(",")
-                l = [float(eval(l[0])), float(eval(l[1])), float(eval(l[2]))]
-                prop_vec += [l]
+            try:
+                for i in range(len(d)):
+                    l = d[i].replace("(", "").replace(")", "").split(",")
+                    [p1, p2, p3] = list(map(float, l))
+                    prop_vec += [[p1, p2, p3]]
+            except ValueError:
+                self.proplabel.setText("<b>Propagation Vector</b><br>Format: <b>k1,k2,k3</b><br>(Optional: will default to (0, 0, 0))<br>Entry did not match format for either single<br>or multiple propagation vectors.<br><b>Try again</b>")
+                return
 
-        elif (self.single_prop.search(prop)) or (self.single_prop.search(prop[1:-1]) and prop[0]=="(" and prop[-1]==")"):
-
+        else:
             prop = prop.replace("(","").replace(")","").split(",")
-            p1 = float(eval(prop[0]))
-            p2 = float(eval(prop[1]))
-            p3 = float(eval(prop[2]))
-            prop_vec = [[p1,p2,p3]]
+            try:
+                [p1, p2, p3] = list(map(float, prop))                
+                prop_vec = [[p1,p2,p3]]
+            except ValueError:
+                self.proplabel.setText("<b>Propagation Vector</b><br>Format: <b>k1,k2,k3</b><br>(Optional: will default to (0, 0, 0))<br>Entry did not match format for either single<br>or multiple propagation vectors.<br><b>Try again</b>")
+                return
+
+        ### check magnitude 
+        if self.line_mag.text() != "":
+            try:
+                mag = float(eval(self.line_mag.text()))
+
+            except ValueError:
+                self.maglabel.setText("<b>Display Magnitude</b><br>(Optional: will default to length of magnetic moment)<br><b>Magnitude must be integer or decimal!</b>")
+                return
 
         else:
 
-            self.proplabel.setText("<b>Propagation Vector</b><br>Format: <b>k1,k2,k3</b><br>(Optional: will default to (0, 0, 0))<br>Entry did not match format for either single<br>or multiple propagation vectors.<br><b>Try again</b>")
-            return
+            mag = np.sqrt(x**2 + y**2 + z**2)
         
         os.chdir('../temp')
         with open('vector.npy', 'wb') as f:
@@ -96,15 +94,15 @@ class window(QtWidgets.QWidget):
         self.close()
 
     def reset_labels(self):
-        self.maglabel.setText("<b>Magnitude</b><br>(Optional: will default to unit length)")
+        self.maglabel.setText("<b>Display Magnitude</b><br>(Optional: will default to length of magnetic moment)")
         self.veclabel.setText("<b>Spin Vector</b><br>Format: <b>sx,sy,sz</b>")
         self.proplabel.setText("<b>Propagation Vector</b><br>Format: <b>k1,k2,k3</b><br>(Optional: will default to (0, 0, 0))")
 
     def check_radio(self):
         if self.b3.isChecked():
-            self.veclabel.setText("<b>Spin Vector</b><br>Format: <b>a,b,c</b>")
+            self.veclabel.setText("<b>Magnetic Moment Vector</b><br>Format: <b>a,b,c</b>")
         else:
-            self.veclabel.setText("<b>Spin Vector</b><br>Format: <b>sx,sy,sz</b>")
+            self.veclabel.setText("<b>Magnetic Moment Vector</b><br>Format: <b>sx,sy,sz</b>")
 
     def set_ui(self):
 
