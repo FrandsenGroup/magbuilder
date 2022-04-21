@@ -1,12 +1,10 @@
-MagViewer:
+MagBuilder:
 -
-A GUI Interface to assign magnetic spins to molecular structures. Developed by Caleb Dame (@calebdame) while working with Ben Frandsen at Brigham Young University.
-
-To be integrated into diffpy.magpdf (@benfrandsen) to facilitate spin assignment when implementing the program
+A simple GUI to create MagStructure objects for use in the diffpy.mpdf package (https://github.com/FrandsenGroup/diffpy.mpdf) for magnetic pair distribution function analysis. Developed by Caleb Dame (@calebdame) under the supervision of Ben Frandsen (@benfrandsen) at Brigham Young University.
 
 Necessary libraries (not included as a standard module):
 -
-- diffpy/Structure
+- diffpy.structure
 - numpy
 - matplotlib version 3.1.2
 - PyQT5
