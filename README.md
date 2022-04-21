@@ -4,7 +4,7 @@ A simple GUI to create MagStructure objects for use in the diffpy.mpdf package (
 
 Necessary libraries (not included as a standard module):
 -
-- diffpy.structure
+- diffpy.mpdf
 - numpy
 - matplotlib version 3.1.2
 - PyQT5
@@ -15,6 +15,21 @@ Standard modules imported:
 - sys
 - tkinter
 - pickle
+
+Recommended installation procedures using conda:
+-
+- Create a conda environment
+ <pre>conda create --name mpdf python=3</pre>
+- Activate the python environment
+ <pre>conda activate mpdf</pre>
+- Install matplotlib
+ <pre>conda install matplotlib</pre>
+- Install diffpy-cmi
+<pre>conda install -c diffpy diffpy-cmi</pre>
+- Install diffpy-mpdf by downloading the package from https://github.com/FrandsenGroup/diffpy.mpdf, navigating to the main directory of the repository, and executing 
+<pre>python setup.py install</pre>
+
+The full diffpy.mpdf package is now installed and you can run the MagBuilder program according to the instructions given below.
 
 Instructions to run:
 -
