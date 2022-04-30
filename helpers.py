@@ -7,18 +7,20 @@ def get_file():
     os.chdir('./input')
     root = tk.Tk()
     root.withdraw()
-    root.filename = filedialog.askopenfilename(initialdir=os.getcwd(), title="Select .cif File")
+    root.filename = filedialog.askopenfilename(initialdir=os.getcwd(), title="Select structure file")
     return root.filename
 
-def check_cif(filename):
+def check_file(filename):
     try:
         print(filename)
-        cif = filename.split("/")[-1]
+        fname = filename.split("/")[-1]
+        extension = fname.split(".")[-1]
+        print(extension)
     except:
-        raise ValueError("File selected of wrong type. Must select a .cif file")
-    if cif[-4:] != ".cif":
-        raise ValueError("File selected of wrong type. Must select a .cif file")
-    return cif
+        raise ValueError("File selected of wrong type. Must select a .cif or .stru file")
+    if extension not in ['cif', 'stru']:
+        raise ValueError("File selected of wrong type. Must select a .cif or .stru file")
+    return fname
 
 def control_selection_technique(option):
     while 1:  

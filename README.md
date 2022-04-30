@@ -33,12 +33,12 @@ The full diffpy.mpdf package is now installed and you can run the MagBuilder pro
 
 Instructions to run:
 -
-1. Place structure file (.cif file) in \_cif folder _(this is the default folder opened to load a .cif file - Files from elsewhere can be loaded once navigated to)_
-2. Run run.py in conda environment with diffpy installed
+1. Place structure file (.cif or .stru file) in input folder
+2. Run magbuilder.py in conda environment with diffpy installed
 
 Instructions to use:
 - 
-1. Select file either in \_cif folder or another folder
+1. Select file either in input folder or another folder
 2. Decide which atoms can be selected, either individually or by atom type
 3. In the viewer, assign the atoms with spins (press i in viewer to see controls)
 4. In in popup, one can assign a spin to all the atoms selected and optionally include a non-unit magnitude or non-zero propagation vector

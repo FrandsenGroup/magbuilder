@@ -20,7 +20,7 @@ def run():
     
     ####--- Read structure --####
     filepath = help.get_file()
-    cif_name = help.check_cif(filepath)
+    cif_name = help.check_file(filepath)
     #### load as diffpy.structure object
     struc_ob = loadStructure(cif_name)
     struc = struc_ob.xyz_cartn
