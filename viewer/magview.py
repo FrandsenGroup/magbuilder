@@ -217,9 +217,9 @@ class MagView:
     def on_close(self, event=[]):
         """
         Function called when escape is pressed / plot is closed
-            Upon close, data is saved in the temp folder
+            Upon close, data is saved in the output folder
         """
-        os.chdir('../temp')
+        os.chdir('../output')
         with open('X.npy', 'wb') as f:
             np.save(f, self.X,allow_pickle=True)
             np.save(f, [self.props],allow_pickle=True)
@@ -233,7 +233,7 @@ class MagView:
         # change directory and run vector assignment GUI
         os.chdir('../textgui')
         os.system('python3 setspin.py') 
-        os.chdir('../temp')
+        os.chdir('../output')
         # if vector was set in the seperate GUI
         if os.path.exists("vector.npy"):
             with open('vector.npy', 'rb') as f:
@@ -310,7 +310,7 @@ class MagView:
             elif event.key == "i": # open instructions
                 os.chdir('../textgui')
                 os.system('python3 instructions.py') 
-                os.chdir('../temp')
+                os.chdir('../output')
             elif event.key == "g":
                 self.showgrid = bool(1 - self.showgrid)
                 self.ax.grid(b=self.showgrid)

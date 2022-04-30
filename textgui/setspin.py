@@ -85,7 +85,7 @@ class window(QtWidgets.QWidget):
 
             mag = np.sqrt(x**2 + y**2 + z**2)
         
-        os.chdir('../temp')
+        os.chdir('../output')
         with open('vector.npy', 'wb') as f:
             np.save(f, np.array([x,y,z]))
             np.save(f, mag)

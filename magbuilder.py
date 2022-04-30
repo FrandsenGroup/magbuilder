@@ -1,4 +1,3 @@
-
 # imports
 import os
 import pickle
@@ -9,9 +8,10 @@ from viewer.magview import MagView
 import helpers as help
 
 def run():   
-
+    """ Main program operation.
+    """
     nonmag = []
-    os.chdir("./_cif")
+    os.chdir("./input")
     try:
         os.remove('data.npy')
     except:
@@ -72,28 +72,29 @@ def run():
             np.save(f, struc_ob.lattice.stdbase)
         MagView(X, Xelem, revdmap, cif=cif_name, basis = struc_ob.lattice.stdbase)
 
-    #build Magstructure objcet with info collected in the viewer    
+    #build MagStructure object with info collected in the viewer    
 
     with open('X.npy', 'rb') as f:
         X = np.load(f,allow_pickle=True)
         props = np.load(f,allow_pickle=True)[0]
     os.remove('X.npy')
-    os.chdir("../_cif")
+    os.chdir("../input")
     os.remove('data.npy')
-    os.chdir("../temp")
+    os.chdir("../output")
     magspecs = []
     labels = []
     for i in range(len(X)):
         if X[i,3] == 1:
             labels += [str(i)]
             inxs = [orig_inx[i]]
-            magspecs += [MagSpecies(struc=struc_ob, label=str(i), strucIdxs=inxs, basisvecs=X[i,4:7], kvecs=props[i])]
+            print('Index: ',orig_inx[i])
+            magspecs += [MagSpecies(struc=struc_ob, label=str(i), strucIdxs=inxs, basisvecs=X[i,4:7], kvecs=props[i], origin=np.array(struc_ob[orig_inx[i]].xyz_cartn))]
 
     mag = MagStructure(struc=struc_ob, species=dict(zip(labels, magspecs)))
     
-    # save obj to pkl file in temp
+    # save obj to pkl file in output
     title = input("Enter alpha-numeric filename: ")
     with open(title + '.pkl', 'wb') as f:
         pickle.dump(mag, f,pickle.HIGHEST_PROTOCOL)
-    print("File saved as " + title + ".pkl in temp folder" )    
+    print("File saved as " + title + ".pkl in output folder" )    
 run()

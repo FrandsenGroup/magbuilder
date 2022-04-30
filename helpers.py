@@ -4,7 +4,7 @@ import os
 import numpy as np
 
 def get_file():
-    os.chdir('./_cif')
+    os.chdir('./input')
     root = tk.Tk()
     root.withdraw()
     root.filename = filedialog.askopenfilename(initialdir=os.getcwd(), title="Select .cif File")
