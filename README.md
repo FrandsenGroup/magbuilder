@@ -2,24 +2,17 @@ MagBuilder:
 -
 A simple GUI to create MagStructure objects for use in the diffpy.mpdf package (https://github.com/FrandsenGroup/diffpy.mpdf) for magnetic pair distribution function analysis. Developed by Caleb Dame (@calebdame) under the supervision of Ben Frandsen (@benfrandsen) at Brigham Young University.
 
-Necessary libraries (not included as a standard module):
+Dependencies:
 -
 - diffpy.mpdf
 - numpy
 - matplotlib version 3.1.2
 - PyQT5
 
-Standard modules imported:
--
-- os
-- sys
-- tkinter
-- pickle
-
 Recommended installation procedures using conda:
 -
 - Create a conda environment
- <pre>conda create --name mpdf python=3</pre>
+ <pre>conda create --name magbuilder python=3</pre>
 - Activate the python environment
  <pre>conda activate mpdf</pre>
 - Install matplotlib
@@ -29,24 +22,21 @@ Recommended installation procedures using conda:
 - Install diffpy-mpdf by downloading the package from https://github.com/FrandsenGroup/diffpy.mpdf, navigating to the main directory of the repository, and executing 
 <pre>python setup.py install</pre>
 
-The full diffpy.mpdf package is now installed and you can run the MagBuilder program according to the instructions given below.
+The full diffpy.mpdf package is now installed and you can run the MagBuilder program according to the instructions given below. (Note, however, that the older version of Matploblib used here causes problems for one of the visualization features in diffpy.mpdf, so it may be best to use two different environments, one for MagBuilder and the other for the main diffpy.mpdf package.)
 
-Instructions to run:
+Usage:
 -
-1. Place structure file (.cif or .stru file) in input folder
-2. Run magbuilder.py in conda environment with diffpy installed
-
-Instructions to use:
-- 
-1. Select file either in input folder or another folder
-2. Decide which atoms can be selected, either individually or by atom type
-3. In the viewer, assign the atoms with spins (press i in viewer to see controls)
-4. In in popup, one can assign a spin to all the atoms selected and optionally include a non-unit magnitude or non-zero propagation vector
-5. Upon closing the viewer by pressing close or escape, the spins, magnitudes, and propagation vectors are saved as a MagStructure Object (diffpy.magpdf) as mag_output.pkl
-6. Read object into existing code with 
+1. Download this repository and store it wherever you like on your local machine
+2. Place structure file (.cif or .stru file) in the input folder of your copy of the repository
+3. Activate the magbuilder conda environment, navigate to your copy of the respository, and run magbuilder.py
+4. Follow the prompt to select a structure file from the input folder
+5. Specify the magnetic atoms, either individually or by atomic species
+6. In the interactive viewer, select the appropriate atoms and set the magnetic information (press i in viewer to see controls)
+7. Upon closing the viewer, a MagStructure object is saved as a binary file with a user-defined name in the output folder
+8. Using a python script or jupyter notebook, the MagStructure object can be opened up for further use as shown below: 
 
  <pre>with open('/path/to/mag_output.pkl', 'rb') as f:
     mag = pickle.load(f)
     f.close()</pre>
 
-
+The example.ipynb notebook included in this repository provides a simple example of this functionality.
