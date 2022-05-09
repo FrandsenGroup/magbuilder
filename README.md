@@ -14,7 +14,7 @@ Recommended installation procedures using conda:
 - Create a conda environment
  <pre>conda create --name magbuilder python=3</pre>
 - Activate the python environment
- <pre>conda activate mpdf</pre>
+ <pre>conda activate magbuilder</pre>
 - Install matplotlib
  <pre>conda install matplotlib</pre>
 - Install diffpy-cmi
@@ -39,4 +39,4 @@ Usage:
     mag = pickle.load(f)
     f.close()</pre>
 
-The example.ipynb notebook included in this repository provides a simple example of this functionality.
+The example.ipynb notebook included in this repository provides an example of this functionality.
